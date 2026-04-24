@@ -3,6 +3,7 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
 import { getCustomerDashboardData } from './api/customerDashboard.repository'
+import { performLogout } from '../auth/lib/logout'
 import type {
   Order as CustomerOrder,
   Payment as CustomerPayment,
@@ -167,8 +168,11 @@ export function CustomerDashboardPage() {
         </nav>
 
         <div className="dashboard-navbar__actions">
-          <ActionButton href="#beranda" variant="light">
-            Kembali ke Landing
+          <ActionButton href="#beranda" variant="light" small>
+            Kembali ke Beranda
+          </ActionButton>
+          <ActionButton variant="dark" small onClick={() => void performLogout()}>
+            Logout
           </ActionButton>
         </div>
       </header>

@@ -1,8 +1,12 @@
-import { getAuthModeFromHash } from './features/auth/lib/auth'
+import { getAuthModeFromHash, getOtpFlowFromHash } from './features/auth/lib/auth'
 import { AuthPage } from './features/auth/AuthPage'
 import { AdminCustomersPage } from './features/admin-dashboard/AdminCustomersPage'
 import { AdminDashboardPage } from './features/admin-dashboard/AdminDashboardPage'
+import { AdminOrdersPage } from './features/admin-dashboard/AdminOrdersPage'
+import { AdminPaymentsPage } from './features/admin-dashboard/AdminPaymentsPage'
+import { AdminServicesPage } from './features/admin-dashboard/AdminServicesPage'
 import { AdminWalkInPage } from './features/admin-dashboard/AdminWalkInPage'
+import { CustomerPaymentPage } from './features/customer-services/CustomerPaymentPage'
 import { CustomerServicesPage } from './features/customer-services/CustomerServicesPage'
 import { getCustomerServicesHash } from './features/customer-services/lib/routes'
 import { CustomerDashboardPage } from './features/customer-dashboard/CustomerDashboardPage'
@@ -24,6 +28,7 @@ import { useEffect, useState } from 'react'
 function App() {
   const [hash, setHash] = useState(() => window.location.hash)
   const authMode = getAuthModeFromHash(hash)
+  const otpFlow = getOtpFlowFromHash(hash)
   const servicesMode = getCustomerServicesHash(hash)
   const dashboardMode = getDashboardHash(hash)
 
@@ -40,11 +45,15 @@ function App() {
   }, [])
 
   if (authMode) {
-    return <AuthPage mode={authMode} footer={landingContent.footer} />
+    return <AuthPage mode={authMode} otpFlow={otpFlow} footer={landingContent.footer} />
   }
 
   if (servicesMode === 'services') {
     return <CustomerServicesPage />
+  }
+
+  if (servicesMode === 'payment') {
+    return <CustomerPaymentPage />
   }
 
   if (dashboardMode === 'customer') {
@@ -53,15 +62,39 @@ function App() {
 
   if (dashboardMode === 'admin') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" footer={landingContent.footer} />
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
     }
 
     return <AdminDashboardPage />
   }
 
+  if (dashboardMode === 'admin-orders') {
+    if (!getAuthToken() || !hasRoleAccess('admin')) {
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+    }
+
+    return <AdminOrdersPage />
+  }
+
+  if (dashboardMode === 'admin-payments') {
+    if (!getAuthToken() || !hasRoleAccess('admin')) {
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+    }
+
+    return <AdminPaymentsPage />
+  }
+
+  if (dashboardMode === 'admin-services') {
+    if (!getAuthToken() || !hasRoleAccess('admin')) {
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+    }
+
+    return <AdminServicesPage />
+  }
+
   if (dashboardMode === 'admin-walkin') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" footer={landingContent.footer} />
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
     }
 
     return <AdminWalkInPage />
@@ -69,7 +102,7 @@ function App() {
 
   if (dashboardMode === 'admin-customers') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" footer={landingContent.footer} />
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
     }
 
     return <AdminCustomersPage />

@@ -64,10 +64,6 @@ export type ApiRegisterPayload = {
   role?: UserRole
 }
 
-export type ApiForgotPasswordPayload = {
-  email: string
-}
-
 export type ApiAuthResponse = {
   user: ApiUser
   access_token?: string

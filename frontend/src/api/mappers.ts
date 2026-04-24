@@ -25,7 +25,9 @@ export function mapUserApiToModel(user: ApiUser): User {
 export function mapServiceApiToModel(service: ApiService): Service {
   return {
     id: service.id,
-    namaLayanan: service.nama_layanan,
+    namaLayanan:
+      (service as ApiService & { namaLayanan?: string }).namaLayanan ??
+      service.nama_layanan,
     harga: service.harga,
     deskripsi: service.deskripsi,
   }

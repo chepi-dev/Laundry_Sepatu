@@ -886,6 +886,11 @@ button {
   gap: 16px;
 }
 
+.auth-form .button-link,
+.auth-form .auth-submit {
+  width: 100%;
+}
+
 .auth-meta-links {
   display: flex;
   justify-content: flex-end;
@@ -1107,9 +1112,9 @@ button {
 }
 
 .dashboard-content {
-  padding: 28px;
+  padding: 22px;
   display: grid;
-  gap: 24px;
+  gap: 18px;
   width: min(1280px, calc(100% - 48px));
   margin: 0 auto;
 }
@@ -1117,14 +1122,14 @@ button {
 .dashboard-hero {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 18px;
   align-items: end;
-  padding: 28px;
+  padding: 22px 24px;
   background:
-    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.36), transparent 18%),
-    linear-gradient(135deg, #dff6ff 0%, #9fddff 50%, #4ca9dd 100%);
-  border: 1px solid #bee6f8;
-  box-shadow: 0 18px 34px rgba(47, 130, 184, 0.12);
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.24), transparent 16%),
+    linear-gradient(135deg, #e2f5ff 0%, #a9def9 52%, #66b3de 100%);
+  border: 1px solid #d4ebf8;
+  box-shadow: 0 10px 22px rgba(47, 130, 184, 0.07);
 }
 
 .dashboard-hero h1 {
@@ -1140,6 +1145,7 @@ button {
   max-width: 760px;
   margin: 0;
   color: #356789;
+  font-size: 0.95rem;
 }
 
 .dashboard-hero__actions {
@@ -1151,20 +1157,20 @@ button {
 .dashboard-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 14px;
 }
 
 .dashboard-stat-card,
 .dashboard-panel {
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid #c9e8f8;
-  box-shadow: 0 16px 30px rgba(63, 138, 185, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #d8edf8;
+  box-shadow: 0 8px 18px rgba(63, 138, 185, 0.05);
 }
 
 .dashboard-stat-card {
   display: grid;
-  gap: 8px;
-  padding: 22px;
+  gap: 6px;
+  padding: 18px;
 }
 
 .dashboard-stat-card span,
@@ -1179,7 +1185,7 @@ button {
 
 .dashboard-stat-card strong {
   color: #0d4f88;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-family: 'Arial Black', 'Montserrat', sans-serif;
 }
 
@@ -1199,7 +1205,7 @@ button {
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.3fr 0.9fr;
-  gap: 18px;
+  gap: 14px;
 }
 
 .dashboard-panel--wide {
@@ -1208,20 +1214,18 @@ button {
 
 .dashboard-right-stack {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   align-content: start;
 }
 
 .dashboard-panel {
   display: grid;
-  gap: 22px;
-  padding: 24px;
+  gap: 16px;
+  padding: 18px;
 }
 
 .dashboard-panel--highlight {
-  background:
-    radial-gradient(circle at top right, rgba(177, 229, 255, 0.36), transparent 18%),
-    rgba(255, 255, 255, 0.9);
+  background: rgba(252, 254, 255, 0.98);
 }
 
 .dashboard-panel__header {
@@ -1289,11 +1293,11 @@ button {
 .dashboard-list__row {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   align-items: start;
-  padding: 16px 18px;
-  background: #f4fbff;
-  border: 1px solid #d7eefb;
+  padding: 12px 14px;
+  background: #f8fcff;
+  border: 1px solid #e0f0f8;
 }
 
 .dashboard-service-item p {
@@ -1361,8 +1365,8 @@ button {
 .service-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(185, 235, 255, 0.24), transparent 24%),
-    linear-gradient(180deg, #f8fdff 0%, #e8f5ff 100%);
+    radial-gradient(circle at top, rgba(185, 235, 255, 0.14), transparent 20%),
+    linear-gradient(180deg, #f9fdff 0%, #eef8ff 100%);
 }
 
 .service-page--state {
@@ -1378,9 +1382,9 @@ button {
   position: sticky;
   top: 0;
   z-index: 12;
-  background: rgba(247, 253, 255, 0.84);
-  border-bottom: 1px solid #d8eefb;
-  backdrop-filter: blur(14px);
+  background: rgba(250, 253, 255, 0.92);
+  border-bottom: 1px solid #dbeef9;
+  backdrop-filter: blur(10px);
 }
 
 .service-header__inner {
@@ -1389,6 +1393,12 @@ button {
   justify-content: space-between;
   gap: 18px;
   padding: 18px 0;
+}
+
+.service-header__account {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .service-header__user {
@@ -1411,25 +1421,25 @@ button {
 
 .service-main {
   display: grid;
-  gap: 24px;
-  padding: 28px 0 44px;
+  gap: 18px;
+  padding: 20px 0 32px;
 }
 
 .service-hero,
 .service-panel,
 .service-catalog {
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid #c9e8f8;
-  box-shadow: 0 16px 30px rgba(63, 138, 185, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #d6ebf7;
+  box-shadow: 0 8px 18px rgba(63, 138, 185, 0.05);
 }
 
 .service-hero {
   display: grid;
-  gap: 20px;
-  padding: 28px;
+  gap: 12px;
+  padding: 22px 24px;
   background:
-    radial-gradient(circle at top right, rgba(255, 255, 255, 0.4), transparent 18%),
-    linear-gradient(135deg, #dff6ff 0%, #9fddff 50%, #4ca9dd 100%);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.24), transparent 16%),
+    linear-gradient(135deg, #dff4ff 0%, #a9ddfb 52%, #67b6e6 100%);
 }
 
 .service-hero h1,
@@ -1441,146 +1451,302 @@ button {
 }
 
 .service-hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4.4rem);
-  line-height: 0.96;
+  font-size: clamp(2.1rem, 5vw, 3.5rem);
+  line-height: 0.98;
 }
 
 .service-hero p {
-  max-width: 860px;
+  max-width: 700px;
   margin: 0;
-  color: #356789;
-}
-
-.service-steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.service-step {
-  min-height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 14px;
-  background: rgba(255, 255, 255, 0.56);
-  color: #46799d;
-  border: 1px solid rgba(13, 79, 136, 0.12);
-  font-size: 0.82rem;
-  font-weight: 800;
-}
-
-.service-step--done {
-  background: #e0fff0;
-  color: #19744f;
-}
-
-.service-step--active {
-  background: #0d4f88;
-  color: #ffffff;
+  color: #416f91;
+  font-size: 0.95rem;
 }
 
 .service-layout {
   display: grid;
   grid-template-columns: 1.2fr 0.8fr;
-  gap: 18px;
+  gap: 14px;
+  align-items: start;
 }
 
 .service-panel {
   display: grid;
-  gap: 22px;
-  padding: 24px;
+  gap: 16px;
+  padding: 18px;
+}
+
+.service-panel--compact {
+  align-content: start;
+  gap: 12px;
+  padding: 16px;
 }
 
 .service-panel--selection {
-  background:
-    radial-gradient(circle at top right, rgba(177, 229, 255, 0.26), transparent 18%),
-    rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.96);
 }
 
 .service-panel__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+}
+
+.service-success {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #c8ead7;
+  background: #ecfff4;
+  color: #176847;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.service-error {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #efc4c4;
+  background: #fff0f0;
+  color: #9b2f2f;
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .service-summary-card {
   display: grid;
-  gap: 12px;
-  padding: 18px;
-  background: #f4fbff;
-  border: 1px solid #d7eefb;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f7fbfe;
+  border: 1px solid #deeff8;
 }
 
 .service-summary-card p {
   margin: 0;
   color: #5d7f9b;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 
 .service-summary-card__meta {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .service-summary-card__meta span {
   color: #0d3d67;
   font-weight: 700;
+  font-size: 0.92rem;
 }
 
 .service-catalog {
   display: grid;
-  gap: 22px;
-  padding: 24px;
-}
-
-.service-catalog__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-}
-
-.service-catalog__card {
-  display: grid;
-  gap: 14px;
   padding: 18px;
-  background: #f4fbff;
-  border: 1px solid #d7eefb;
 }
 
-.service-catalog__card.is-selected {
-  background: linear-gradient(180deg, #eaf8ff 0%, #d8f1ff 100%);
-  border-color: #0d76b8;
+.service-order-list {
+  display: grid;
+  gap: 12px;
 }
 
-.service-catalog__card h3 {
+.service-order-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  background: #f8fcff;
+  border: 1px solid #deeff8;
+}
+
+.service-order-card__header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.service-order-card h3 {
   margin: 0;
   font-family: 'Arial Black', 'Montserrat', sans-serif;
   color: #0d3d67;
+  font-size: 1.1rem;
 }
 
-.service-catalog__card p {
+.service-order-card__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.service-order-card__grid > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e3f0f8;
+}
+
+.service-order-card__grid span {
+  color: #77a4c1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.service-order-card__grid strong {
+  color: #0d3d67;
+  font-size: 0.9rem;
+}
+
+.service-order-card__items {
+  display: grid;
+  gap: 8px;
+}
+
+.service-order-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  background: #ffffff;
+  border: 1px solid #e3f0f8;
+}
+
+.service-order-item span {
+  color: #77a4c1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.service-order-item strong {
+  color: #0d3d67;
+  font-size: 0.9rem;
+}
+
+.service-order-card__summary {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e3f0f8;
+}
+
+.service-order-card__summary p {
   margin: 0;
+  color: #5d7f9b;
+  font-size: 0.9rem;
+}
+
+.service-payment-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: #f8fcff;
+  border: 1px solid #deeff8;
+}
+
+.service-payment-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.service-payment-card__info {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e3f0f8;
+}
+
+.service-payment-card__info span {
+  color: #77a4c1;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.service-payment-card__info strong {
+  color: #0d3d67;
+}
+
+.service-payment-card__info small {
   color: #5d7f9b;
 }
 
-.service-catalog__card strong {
-  color: #0d4f88;
+.service-payment-card__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.service-select-button {
-  min-height: 44px;
+.service-payment-card__summary > div {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e3f0f8;
+}
+
+.service-payment-card__summary span {
+  color: #77a4c1;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.service-payment-card__summary strong {
+  color: #0d3d67;
+}
+
+.service-payment-proof {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e3f0f8;
+}
+
+.service-payment-proof span {
+  color: #77a4c1;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.service-payment-proof img {
+  width: 100%;
+  max-width: 320px;
+  border: 1px solid #d7eefb;
+  object-fit: cover;
+}
+
+.service-payment-proof small {
+  color: #5d7f9b;
+}
+
+.service-secondary-button {
+  min-height: 52px;
+  padding: 0 24px;
   border: 2px solid #0d4f88;
   background: #ffffff;
   color: #0d4f88;
   font: inherit;
   font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   cursor: pointer;
 }
 
 .dashboard-order-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px;
 }
 
 .dashboard-order-form .form-field:has(textarea) {
@@ -1612,20 +1778,23 @@ button {
 .dashboard-service-preview {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
+  align-items: start;
 }
 
 .dashboard-service-preview > div {
   display: grid;
   gap: 6px;
-  padding: 16px 18px;
-  background: #f4fbff;
-  border: 1px solid #d7eefb;
+  align-content: start;
+  min-height: 92px;
+  padding: 12px 14px;
+  background: #f7fbfe;
+  border: 1px solid #deeff8;
 }
 
 .dashboard-service-preview span {
   color: #77a4c1;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -1633,6 +1802,8 @@ button {
 
 .dashboard-service-preview strong {
   color: #0d3d67;
+  font-size: 0.9rem;
+  line-height: 1.35;
 }
 
 .dashboard-order-actions {
@@ -1646,13 +1817,13 @@ button {
 }
 
 .admin-dashboard-page .dashboard-profile--navbar {
-  min-width: 240px;
+  min-width: 220px;
 }
 
 .admin-dashboard-hero {
   background:
-    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.34), transparent 18%),
-    linear-gradient(135deg, #dbf5ff 0%, #a8e2ff 50%, #5daee0 100%);
+    radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.22), transparent 16%),
+    linear-gradient(135deg, #e2f5ff 0%, #b6e3fb 52%, #75bbe0 100%);
 }
 
 .admin-overview-hero h1,
@@ -1661,8 +1832,8 @@ button {
 }
 
 .admin-compact-hero {
-  padding: 16px 24px;
-  min-height: 132px;
+  padding: 14px 20px;
+  min-height: 112px;
   align-items: center;
 }
 
@@ -1691,10 +1862,10 @@ button {
 .admin-review-card,
 .admin-customer-card {
   display: grid;
-  gap: 14px;
-  padding: 18px;
-  background: #f4fbff;
-  border: 1px solid #d7eefb;
+  gap: 10px;
+  padding: 14px;
+  background: #f8fcff;
+  border: 1px solid #e0f0f8;
 }
 
 .admin-order-card__header,
@@ -1702,7 +1873,7 @@ button {
   display: flex;
   align-items: start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
 }
 
 .admin-order-card h3,
@@ -1721,32 +1892,30 @@ button {
 
 .admin-order-card__meta {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   color: #46799d;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .admin-service-summary,
 .admin-customer-grid {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .admin-service-form {
   display: grid;
-  gap: 14px;
-  padding: 18px;
-  background:
-    radial-gradient(circle at top right, rgba(177, 229, 255, 0.18), transparent 22%),
-    #f7fcff;
-  border: 1px solid #d7eefb;
+  gap: 12px;
+  padding: 14px;
+  background: #f9fdff;
+  border: 1px solid #e0f0f8;
 }
 
 .admin-service-form__actions,
 .admin-service-card__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .admin-service-form__note {
@@ -1755,9 +1924,11 @@ button {
 }
 
 .admin-service-card {
-  gap: 12px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(234, 248, 255, 0.95) 100%);
+  gap: 10px;
+  padding: 14px;
+  background: #fbfdff;
+  border: 1px solid #e0f0f8;
+  box-shadow: none;
 }
 
 .admin-service-card__delete {
@@ -1888,6 +2059,8 @@ button {
   .dashboard-services-grid,
   .dashboard-order-form,
   .dashboard-service-preview,
+  .service-payment-card__grid,
+  .service-payment-card__summary,
   .admin-dashboard-grid,
   .admin-customer-grid {
     grid-template-columns: 1fr;
@@ -1904,7 +2077,7 @@ button {
 
   .service-layout,
   .walkin-layout,
-  .service-catalog__grid {
+  .service-order-card__grid {
     grid-template-columns: 1fr;
   }
 }
@@ -2013,7 +2186,9 @@ button {
   }
 
   .service-header__inner,
-  .service-panel__actions {
+  .service-panel__actions,
+  .service-header__account,
+  .service-order-card__header {
     flex-direction: column;
     align-items: flex-start;
   }

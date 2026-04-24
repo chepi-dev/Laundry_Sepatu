@@ -1,9 +1,9 @@
 // API-INTEGRATION:
 // File ini adalah titik utama untuk koneksi HTTP ke Laravel.
 // Asumsi: route yang dibagikan user ada di `routes/api.php`,
-// sehingga base URL default-nya menjadi `http://127.0.0.1:8000/api`.
+// sehingga base URL default-nya menjadi `http://localhost:8000/api`.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api'
 const AUTH_TOKEN_KEY = 'laundry_auth_token'
 
 export function getAuthToken() {

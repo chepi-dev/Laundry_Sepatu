@@ -3,6 +3,7 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
 import { createWalkInAdminOrder, getAdminDashboardData } from './api/adminDashboard.repository'
+import { performLogout } from '../auth/lib/logout'
 import type { AdminDashboardData } from '../../types/domain'
 
 export function AdminWalkInPage() {
@@ -68,9 +69,9 @@ export function AdminWalkInPage() {
 
         <nav className="dashboard-nav dashboard-nav--navbar" aria-label="Menu admin pelanggan langsung">
           <a href="#/dashboard/admin">Ringkasan</a>
-          <a href="#/dashboard/admin">Order Masuk</a>
-          <a href="#/dashboard/admin">Verifikasi</a>
-          <a href="#/dashboard/admin">Layanan</a>
+          <a href="#/dashboard/admin/orders">Order Masuk</a>
+          <a href="#/dashboard/admin/payments">Verifikasi</a>
+          <a href="#/dashboard/admin/services">Layanan</a>
           <a className="is-active" href="#/dashboard/admin/walk-in">
             Datang Langsung
           </a>
@@ -78,8 +79,11 @@ export function AdminWalkInPage() {
         </nav>
 
         <div className="dashboard-navbar__actions">
-          <ActionButton href="#beranda" variant="light">
+          <ActionButton href="#beranda" variant="light" small>
             Kembali ke Beranda
+          </ActionButton>
+          <ActionButton variant="dark" small onClick={() => void performLogout()}>
+            Logout
           </ActionButton>
         </div>
       </header>

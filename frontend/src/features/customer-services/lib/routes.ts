@@ -3,5 +3,9 @@ export function getCustomerServicesHash(hash: string) {
     return 'services'
   }
 
+  if (hash === '#/customer/payment') {
+    return 'payment'
+  }
+
   return null
 }
