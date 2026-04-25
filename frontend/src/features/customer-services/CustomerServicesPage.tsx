@@ -3,15 +3,20 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
 import { getCustomerServicesData } from './api/customerServices.repository'
+import { saveCustomerPaymentDraft } from './lib/customerOrderFlow'
+import { performLogout } from '../auth/lib/logout'
 import type { Service, User } from '../../types/domain'
 
 export function CustomerServicesPage() {
   const [user, setUser] = useState<User | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadErrorMessage, setLoadErrorMessage] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [selectedServiceId, setSelectedServiceId] = useState(0)
   const [selectedQty, setSelectedQty] = useState(1)
+  const [pickupAddress, setPickupAddress] = useState('')
+  const [orderNote, setOrderNote] = useState('')
 
   useEffect(() => {
     let isMounted = true
@@ -33,7 +38,7 @@ export function CustomerServicesPage() {
 
         const message =
           error instanceof Error ? error.message : 'Gagal memuat data layanan.'
-        setErrorMessage(message)
+        setLoadErrorMessage(message)
       })
       .finally(() => {
         if (isMounted) {
@@ -54,12 +59,35 @@ export function CustomerServicesPage() {
     return <div className="service-page service-page--state">Memuat layanan...</div>
   }
 
-  if (errorMessage || !user) {
+  if (loadErrorMessage || !user) {
     return (
       <div className="service-page service-page--state">
-        {errorMessage || 'Data pengguna tidak tersedia.'}
+        {loadErrorMessage || 'Data pengguna tidak tersedia.'}
       </div>
     )
+  }
+
+  const handleProceedToPayment = () => {
+    if (!selectedService) {
+      setErrorMessage('Pilih layanan terlebih dahulu.')
+      return
+    }
+
+    if (!pickupAddress.trim()) {
+      setErrorMessage('Alamat pickup wajib diisi sebelum lanjut ke pembayaran.')
+      return
+    }
+
+    setErrorMessage('')
+    saveCustomerPaymentDraft({
+      user,
+      service: selectedService,
+      qty: selectedQty,
+      alamatPickup: pickupAddress.trim(),
+      catatan: orderNote.trim(),
+      totalBayar: selectedTotal,
+    })
+    window.location.hash = '#/customer/payment'
   }
 
   return (
@@ -72,9 +100,14 @@ export function CustomerServicesPage() {
             <span>CARE</span>
           </a>
 
-          <div className="service-header__user">
-            <span>Customer</span>
-            <strong>{user.name}</strong>
+          <div className="service-header__account">
+            <div className="service-header__user">
+              <span>Customer</span>
+              <strong>{user.name}</strong>
+            </div>
+            <ActionButton variant="dark" small onClick={() => void performLogout()}>
+              Logout
+            </ActionButton>
           </div>
         </div>
       </header>
@@ -82,21 +115,12 @@ export function CustomerServicesPage() {
       <main className="service-main container">
         <section className="service-hero">
           <div>
-            <p className="section-kicker">Langkah 1 dari 3</p>
+            <p className="section-kicker">Layanan Customer</p>
             <h1>Pilih Layanan Cuci Sepatu</h1>
             <p>
-              Setelah login, customer langsung masuk ke halaman ini untuk memilih
-              treatment yang dibutuhkan sebelum lanjut ke pembayaran dan detail
-              pesanan.
+              Pilih layanan yang dibutuhkan, lengkapi form pemesanan, lalu lanjutkan
+              ke pembayaran agar detail order tercatat dengan rapi.
             </p>
-          </div>
-
-          <div className="service-steps">
-            <div className="service-step service-step--done">Register</div>
-            <div className="service-step service-step--done">Login</div>
-            <div className="service-step service-step--active">Pilih Layanan</div>
-            <div className="service-step">Pembayaran</div>
-            <div className="service-step">Detail Pesanan</div>
           </div>
         </section>
 
@@ -143,6 +167,8 @@ export function CustomerServicesPage() {
                 label="Alamat Pickup"
                 placeholder="Masukkan alamat penjemputan"
                 as="textarea"
+                value={pickupAddress}
+                onChange={setPickupAddress}
               />
 
               <FormField
@@ -150,11 +176,15 @@ export function CustomerServicesPage() {
                 label="Catatan Barang"
                 placeholder="Contoh: midsole kuning, upper kena noda, atau ingin finishing khusus"
                 as="textarea"
+                value={orderNote}
+                onChange={setOrderNote}
               />
             </div>
 
+            {errorMessage ? <p className="service-error">{errorMessage}</p> : null}
+
             <div className="service-panel__actions">
-              <button className="auth-submit" type="button">
+              <button className="auth-submit" type="button" onClick={handleProceedToPayment}>
                 Lanjut ke Pembayaran
               </button>
               <ActionButton href="#beranda" variant="light">
@@ -163,7 +193,7 @@ export function CustomerServicesPage() {
             </div>
           </article>
 
-          <article className="service-panel">
+          <article className="service-panel service-panel--compact">
             <div className="dashboard-panel__header">
               <div>
                 <p className="section-kicker">Ringkasan Pesanan</p>
@@ -194,37 +224,6 @@ export function CustomerServicesPage() {
               </div>
             </div>
           </article>
-        </section>
-
-        <section className="service-catalog">
-          <div className="dashboard-panel__header">
-            <div>
-              <p className="section-kicker">Daftar Layanan</p>
-              <h2>Pilih Treatment Sesuai Kebutuhan</h2>
-            </div>
-          </div>
-
-          <div className="service-catalog__grid">
-            {services.map((service) => (
-              <article
-                key={service.id}
-                className={`service-catalog__card ${
-                  selectedServiceId === service.id ? 'is-selected' : ''
-                }`}
-              >
-                <h3>{service.namaLayanan}</h3>
-                <p>{service.deskripsi}</p>
-                <strong>{formatRupiah(service.harga)}</strong>
-                <button
-                  type="button"
-                  className="service-select-button"
-                  onClick={() => setSelectedServiceId(service.id)}
-                >
-                  Pilih Layanan
-                </button>
-              </article>
-            ))}
-          </div>
         </section>
       </main>
     </div>

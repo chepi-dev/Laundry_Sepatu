@@ -5,6 +5,7 @@ type FormFieldProps = {
   placeholder: string
   autoComplete?: string
   as?: 'input' | 'textarea'
+  readOnly?: boolean
   value?: string
   onChange?: (value: string) => void
 }
@@ -16,6 +17,7 @@ export function FormField({
   placeholder,
   autoComplete,
   as = 'input',
+  readOnly = false,
   value,
   onChange,
 }: FormFieldProps) {
@@ -28,6 +30,7 @@ export function FormField({
           name={id}
           placeholder={placeholder}
           rows={4}
+          readOnly={readOnly}
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
         />
@@ -38,6 +41,7 @@ export function FormField({
           type={type}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          readOnly={readOnly}
           value={value}
           onChange={(event) => onChange?.(event.target.value)}
         />

@@ -56,8 +56,9 @@ export function getCurrentUser() {
 export function logout() {
   return apiRequest<{ message?: string }>('/logout', {
     method: 'POST',
-  }).then((response) => {
-    clearAuthToken()
-    return response
   })
+    .then((response) => response)
+    .finally(() => {
+      clearAuthToken()
+    })
 }

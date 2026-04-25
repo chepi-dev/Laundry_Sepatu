@@ -1,47 +1,97 @@
 import { useState, type FormEvent } from 'react'
-import { login, logout, register } from '../../api/auth.api'
+import { login, register } from '../../api/auth.api'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import type { LandingContent } from '../../types/content'
-import type { AuthMode } from '../../types/auth'
-import { clearSessionUser, setSessionUser } from './lib/session'
+import type { AuthMode, OtpFlow } from '../../types/auth'
+import { setSessionUser } from './lib/session'
 
 type AuthPageProps = {
   mode: AuthMode
+  otpFlow: OtpFlow | null
   footer: LandingContent['footer']
 }
+
+type PendingOtpPayload = {
+  flow: OtpFlow
+  name?: string
+  email: string
+  password?: string
+  phone?: string
+  address?: string
+}
+
+const OTP_STORAGE_KEY = 'laundry_pending_otp'
 
 const authContent = {
   login: {
     eyebrow: 'Member Access',
     title: 'Masuk ke Akun',
     description:
-      'Masuk untuk cek layanan, lanjutkan pemesanan, dan kelola data perawatan sepatu kamu.',
+      'Masuk untuk melihat layanan, mengecek pesanan, dan mengakses dashboard sesuai peran akun kamu.',
     submitLabel: 'Masuk Sekarang',
   },
   register: {
-    eyebrow: 'Create Account',
+    eyebrow: 'Registrasi Akun',
     title: 'Daftar Akun Baru',
     description:
-      'Buat akun untuk menikmati proses pemesanan yang lebih cepat, rapi, dan mudah dilacak.',
-    submitLabel: 'Buat Akun',
+      'Lengkapi data akun terlebih dahulu, lalu lanjutkan verifikasi OTP pada halaman yang sama dengan proses pemulihan password.',
+    submitLabel: 'Daftar Sekarang',
   },
   'forgot-password': {
-    eyebrow: 'Account Recovery',
+    eyebrow: 'Pemulihan Akun',
     title: 'Lupa Password',
     description:
-      'Masukkan email yang terdaftar. Kami akan kirim instruksi reset password ke email tersebut.',
-    submitLabel: 'Kirim Link Reset',
+      'Masukkan email terdaftar untuk melanjutkan verifikasi OTP sebelum proses pemulihan akun.',
+    submitLabel: 'Kirim Kode OTP',
+  },
+  'verify-email': {
+    eyebrow: 'Verifikasi Email',
+    title: 'Verifikasi Email Akun',
+    description:
+      'Masukkan kode verifikasi yang dikirim ke email agar pendaftaran akun bisa diselesaikan.',
+    submitLabel: 'Verifikasi Email',
+  },
+  'send-otp': {
+    eyebrow: 'Verifikasi OTP',
+    title: 'Masukkan Kode OTP',
+    description:
+      'Halaman ini dipakai bersama untuk verifikasi pendaftaran akun baru maupun pemulihan password.',
+    submitLabel: 'Verifikasi OTP',
   },
 } as const
 
-export function AuthPage({ mode, footer }: AuthPageProps) {
+function savePendingOtp(payload: PendingOtpPayload) {
+  window.sessionStorage.setItem(OTP_STORAGE_KEY, JSON.stringify(payload))
+}
+
+function getPendingOtp(): PendingOtpPayload | null {
+  const rawValue = window.sessionStorage.getItem(OTP_STORAGE_KEY)
+
+  if (!rawValue) {
+    return null
+  }
+
+  try {
+    return JSON.parse(rawValue) as PendingOtpPayload
+  } catch {
+    return null
+  }
+}
+
+function clearPendingOtp() {
+  window.sessionStorage.removeItem(OTP_STORAGE_KEY)
+}
+
+export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
   const content = authContent[mode]
-  const [name, setName] = useState('')
+  const pendingOtp = mode === 'send-otp' || mode === 'verify-email' ? getPendingOtp() : null
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
+  const [otpCode, setOtpCode] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -51,24 +101,6 @@ export function AuthPage({ mode, footer }: AuthPageProps) {
     setIsSubmitting(true)
 
     try {
-      if (mode === 'register') {
-        const response = await register({
-          name,
-          email,
-          password,
-          no_hp: phone,
-          alamat: address,
-          role: 'customer',
-        })
-
-        if (response.user) {
-          setSessionUser(response.user)
-        }
-
-        window.location.hash = '#/auth/login'
-        return
-      }
-
       if (mode === 'login') {
         const response = await login({ email, password })
         setSessionUser(response.user)
@@ -82,11 +114,62 @@ export function AuthPage({ mode, footer }: AuthPageProps) {
         return
       }
 
-      if (mode === 'forgot-password') {
-        clearSessionUser()
-        await logout().catch(() => undefined)
-        window.location.hash = '#/auth/login'
+      if (mode === 'register') {
+        savePendingOtp({
+          flow: 'register',
+          name,
+          email,
+          password,
+          phone,
+          address,
+        })
+        window.location.hash = '#/auth/verify-email/register'
+        return
       }
+
+      if (mode === 'forgot-password') {
+        savePendingOtp({
+          flow: 'forgot-password',
+          email,
+        })
+        window.location.hash = '#/auth/send-otp/forgot-password'
+        return
+      }
+
+      if (!pendingOtp || !otpFlow || pendingOtp.flow !== otpFlow) {
+        throw new Error('Data OTP tidak ditemukan. Silakan ulangi proses dari awal.')
+      }
+
+      if (otpCode.trim().length < 4) {
+        throw new Error('Kode OTP harus diisi terlebih dahulu.')
+      }
+
+      if (mode === 'verify-email' && pendingOtp.flow === 'register') {
+        await register({
+          name: pendingOtp.name ?? '',
+          email: pendingOtp.email,
+          password: pendingOtp.password ?? '',
+          no_hp: pendingOtp.phone ?? '',
+          alamat: pendingOtp.address ?? '',
+          role: 'customer',
+        })
+
+        clearPendingOtp()
+        window.alert('Verifikasi OTP berhasil. Akun berhasil dibuat, silakan login.')
+        window.location.hash = '#/auth/login'
+        return
+      }
+
+      if (mode === 'send-otp' && pendingOtp.flow === 'register') {
+        window.location.hash = '#/auth/verify-email/register'
+        return
+      }
+
+      clearPendingOtp()
+      window.alert(
+        'Verifikasi OTP berhasil. Alur reset password siap dilanjutkan setelah endpoint backend ditambahkan.',
+      )
+      window.location.hash = '#/auth/login'
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses permintaan.'
@@ -132,18 +215,11 @@ export function AuthPage({ mode, footer }: AuthPageProps) {
                 <span>Siap dihubungkan ke backend atau API auth berikutnya.</span>
               </div>
             </div>
-
-            <ActionButton href="#beranda" variant="light">
-              Kembali ke Beranda
-            </ActionButton>
           </div>
 
           <div className="auth-card">
             <div className="auth-tabs" aria-label="Navigasi auth">
-              <a
-                className={`auth-tab ${mode === 'login' ? 'is-active' : ''}`}
-                href="#/auth/login"
-              >
+              <a className={`auth-tab ${mode === 'login' ? 'is-active' : ''}`} href="#/auth/login">
                 Login
               </a>
               <a
@@ -155,6 +231,32 @@ export function AuthPage({ mode, footer }: AuthPageProps) {
             </div>
 
             <form className="auth-form" onSubmit={handleSubmit}>
+              {mode === 'login' ? (
+                <>
+                  <FormField
+                    id="login-email"
+                    label="Email"
+                    type="email"
+                    placeholder="Masukkan email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={setEmail}
+                  />
+                  <FormField
+                    id="login-password"
+                    label="Password"
+                    type="password"
+                    placeholder="Masukkan password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={setPassword}
+                  />
+                  <div className="auth-meta-links">
+                    <a href="#/auth/forgot-password">Lupa password?</a>
+                  </div>
+                </>
+              ) : null}
+
               {mode === 'register' ? (
                 <>
                   <FormField
@@ -203,32 +305,6 @@ export function AuthPage({ mode, footer }: AuthPageProps) {
                 </>
               ) : null}
 
-              {mode === 'login' ? (
-                <>
-                  <FormField
-                    id="login-email"
-                    label="Email"
-                    type="email"
-                    placeholder="Masukkan email"
-                    autoComplete="email"
-                    value={email}
-                    onChange={setEmail}
-                  />
-                  <FormField
-                    id="login-password"
-                    label="Password"
-                    type="password"
-                    placeholder="Masukkan password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={setPassword}
-                  />
-                  <div className="auth-meta-links">
-                    <a href="#/auth/forgot-password">Lupa password?</a>
-                  </div>
-                </>
-              ) : null}
-
               {mode === 'forgot-password' ? (
                 <>
                   <FormField
@@ -246,11 +322,67 @@ export function AuthPage({ mode, footer }: AuthPageProps) {
                 </>
               ) : null}
 
+              {mode === 'verify-email' ? (
+                <>
+                  
+                  <FormField
+                    id="verify-email-code"
+                    label="Kode Verifikasi"
+                    placeholder="Masukkan kode verifikasi email"
+                    value={otpCode}
+                    onChange={setOtpCode}
+                  />
+                  <div className="auth-meta-links">
+                    <a href="#/auth/register">Kembali ke formulir daftar</a>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.alert(
+                          'Kirim ulang kode verifikasi email siap dihubungkan ke endpoint backend saat API tersedia.',
+                        )
+                      }
+                    >
+                      Kirim ulang kode
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {mode === 'send-otp' ? (
+                <>
+                  
+                  <FormField
+                    id="otp-code"
+                    label="Kode OTP"
+                    placeholder="Masukkan kode OTP"
+                    value={otpCode}
+                    onChange={setOtpCode}
+                  />
+                  <div className="auth-meta-links">
+                    <a href="#/auth/forgot-password">Kembali ke formulir sebelumnya</a>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        window.alert(
+                          'Kirim ulang OTP siap dihubungkan ke endpoint backend saat API tersedia.',
+                        )
+                      }
+                    >
+                      Kirim ulang OTP
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
               {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
 
               <button className="auth-submit" type="submit">
                 {isSubmitting ? 'Memproses...' : content.submitLabel}
               </button>
+
+              <ActionButton href="#beranda" variant="light">
+                Kembali ke Beranda
+              </ActionButton>
             </form>
 
           </div>
