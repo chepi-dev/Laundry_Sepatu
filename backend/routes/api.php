@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\LayananController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PembayaranController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\OtpController;
+
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -18,6 +20,9 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
 
 Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
 
+
+Route::post('/send-otp', [OtpController::class, 'sendOtp']);
+Route::post('/verify-otp', [OtpController::class, 'verifyOtp']);
 
 // Layanan
 Route::get('/layanan',[LayananController::class, 'index']);
@@ -39,7 +44,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::patch('/admin/orders/{orderId}/pembayaran/status', [PembayaranController::class, 'updateStatus']);
 });
 
-// User
+// Order Customer
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);

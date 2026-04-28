@@ -23,6 +23,15 @@ export function getAdminDashboardData(): AdminDashboardData {
   return adminDashboardState
 }
 
+export function syncAdminServices(services: Service[]) {
+  adminDashboardState = {
+    ...adminDashboardState,
+    services,
+  }
+
+  return adminDashboardState
+}
+
 export function completeAdminOrder(orderId: number) {
   adminDashboardState = {
     ...adminDashboardState,
@@ -40,37 +49,6 @@ export function verifyAdminPayment(paymentId: number) {
     payments: adminDashboardState.payments.map((payment) =>
       payment.id === paymentId ? { ...payment, status: 'Lunas' } : payment,
     ),
-  }
-
-  return adminDashboardState
-}
-
-export function saveAdminService(input: Omit<Service, 'id'> & { id?: number | null }) {
-  const nextService: Service = {
-    id: input.id ?? Date.now(),
-    namaLayanan: input.namaLayanan,
-    harga: input.harga,
-    deskripsi: input.deskripsi,
-  }
-
-  const serviceExists = input.id !== null && input.id !== undefined
-
-  adminDashboardState = {
-    ...adminDashboardState,
-    services: serviceExists
-      ? adminDashboardState.services.map((service) =>
-          service.id === input.id ? nextService : service,
-        )
-      : [nextService, ...adminDashboardState.services],
-  }
-
-  return adminDashboardState
-}
-
-export function deleteAdminService(serviceId: number) {
-  adminDashboardState = {
-    ...adminDashboardState,
-    services: adminDashboardState.services.filter((service) => service.id !== serviceId),
   }
 
   return adminDashboardState

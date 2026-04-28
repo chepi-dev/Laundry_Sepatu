@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react'
-import { login, register } from '../../api/auth.api'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import type { LandingContent } from '../../types/content'
 import type { AuthMode, OtpFlow } from '../../types/auth'
+import { login, register, sendOtp, verifyOtp } from './api/auth.api'
 import { setSessionUser } from './lib/session'
 
 type AuthPageProps = {
@@ -83,6 +83,10 @@ function clearPendingOtp() {
   window.sessionStorage.removeItem(OTP_STORAGE_KEY)
 }
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses permintaan.'
+}
+
 export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
   const content = authContent[mode]
   const pendingOtp = mode === 'send-otp' || mode === 'verify-email' ? getPendingOtp() : null
@@ -93,11 +97,14 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
   const [address, setAddress] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isResending, setIsResending] = useState(false)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setErrorMessage('')
+    setSuccessMessage('')
     setIsSubmitting(true)
 
     try {
@@ -115,6 +122,7 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
       }
 
       if (mode === 'register') {
+        await sendOtp({ email })
         savePendingOtp({
           flow: 'register',
           name,
@@ -128,6 +136,7 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
       }
 
       if (mode === 'forgot-password') {
+        await sendOtp({ email })
         savePendingOtp({
           flow: 'forgot-password',
           email,
@@ -140,12 +149,19 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
         throw new Error('Data OTP tidak ditemukan. Silakan ulangi proses dari awal.')
       }
 
-      if (otpCode.trim().length < 4) {
+      const normalizedOtpCode = otpCode.trim()
+
+      if (normalizedOtpCode.length < 4) {
         throw new Error('Kode OTP harus diisi terlebih dahulu.')
       }
 
-      if (mode === 'verify-email' && pendingOtp.flow === 'register') {
-        await register({
+      await verifyOtp({
+        email: pendingOtp.email,
+        otp_code: normalizedOtpCode,
+      })
+
+      if (pendingOtp.flow === 'register') {
+        const response = await register({
           name: pendingOtp.name ?? '',
           email: pendingOtp.email,
           password: pendingOtp.password ?? '',
@@ -155,13 +171,14 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
         })
 
         clearPendingOtp()
-        window.alert('Verifikasi OTP berhasil. Akun berhasil dibuat, silakan login.')
-        window.location.hash = '#/auth/login'
-        return
-      }
+        setSessionUser(response.user)
 
-      if (mode === 'send-otp' && pendingOtp.flow === 'register') {
-        window.location.hash = '#/auth/verify-email/register'
+        if (response.user.role === 'admin') {
+          window.location.hash = '#/dashboard/admin'
+          return
+        }
+
+        window.location.hash = '#/customer/services'
         return
       }
 
@@ -171,15 +188,35 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
       )
       window.location.hash = '#/auth/login'
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses permintaan.'
+      const message = getErrorMessage(error)
       setErrorMessage(message)
 
       if (mode === 'login') {
-        window.alert('Email atau password salah. Silakan periksa kembali.')
+        window.alert(message)
       }
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    setErrorMessage('')
+    setSuccessMessage('')
+
+    if (!pendingOtp || !otpFlow || pendingOtp.flow !== otpFlow) {
+      setErrorMessage('Data OTP tidak ditemukan. Silakan ulangi proses dari awal.')
+      return
+    }
+
+    setIsResending(true)
+
+    try {
+      const response = await sendOtp({ email: pendingOtp.email })
+      setSuccessMessage(response.message || 'Kode OTP baru sudah dikirim ke email Anda.')
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error))
+    } finally {
+      setIsResending(false)
     }
   }
 
@@ -336,13 +373,10 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
                     <a href="#/auth/register">Kembali ke formulir daftar</a>
                     <button
                       type="button"
-                      onClick={() =>
-                        window.alert(
-                          'Kirim ulang kode verifikasi email siap dihubungkan ke endpoint backend saat API tersedia.',
-                        )
-                      }
+                      disabled={isSubmitting || isResending}
+                      onClick={handleResendOtp}
                     >
-                      Kirim ulang kode
+                      {isResending ? 'Mengirim...' : 'Kirim ulang kode'}
                     </button>
                   </div>
                 </>
@@ -362,21 +396,19 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
                     <a href="#/auth/forgot-password">Kembali ke formulir sebelumnya</a>
                     <button
                       type="button"
-                      onClick={() =>
-                        window.alert(
-                          'Kirim ulang OTP siap dihubungkan ke endpoint backend saat API tersedia.',
-                        )
-                      }
+                      disabled={isSubmitting || isResending}
+                      onClick={handleResendOtp}
                     >
-                      Kirim ulang OTP
+                      {isResending ? 'Mengirim...' : 'Kirim ulang OTP'}
                     </button>
                   </div>
                 </>
               ) : null}
 
               {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
+              {successMessage ? <p className="auth-success">{successMessage}</p> : null}
 
-              <button className="auth-submit" type="submit">
+              <button className="auth-submit" type="submit" disabled={isSubmitting || isResending}>
                 {isSubmitting ? 'Memproses...' : content.submitLabel}
               </button>
 

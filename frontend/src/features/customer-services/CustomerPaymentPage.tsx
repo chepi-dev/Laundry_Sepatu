@@ -1,14 +1,15 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
-import { performLogout } from '../auth/lib/logout'
+import { createCustomerOrder } from '../customer-dashboard/api/orders.api'
+import { createPaymentByOrderId } from '../customer-dashboard/api/payments.api'
 import { getCustomerServicesData } from './api/customerServices.repository'
 import {
-  appendLocalCustomerOrder,
   clearCustomerPaymentDraft,
   getCustomerPaymentDraft,
 } from './lib/customerOrderFlow'
-import type { Order, Payment, Service } from '../../types/domain'
+import { CustomerNavbar } from './components/CustomerNavbar'
+import type { Order, Payment, Service, User } from '../../types/domain'
 
 const BANK_ACCOUNT_NAME = 'BCA a.n. Shoes and Care'
 const BANK_ACCOUNT_NUMBER = '1234567890'
@@ -17,12 +18,14 @@ export function CustomerPaymentPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
   const [services, setServices] = useState<Service[]>([])
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadErrorMessage, setLoadErrorMessage] = useState('')
   const [paymentProofName, setPaymentProofName] = useState('')
   const [paymentProofPreview, setPaymentProofPreview] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
 
   const draft = getCustomerPaymentDraft()
 
@@ -38,6 +41,7 @@ export function CustomerPaymentPage() {
         setServices(response.services)
         setOrders(response.orders)
         setPayments(response.payments)
+        setUser(response.user)
       })
       .catch((error) => {
         if (!isMounted) {
@@ -68,6 +72,7 @@ export function CustomerPaymentPage() {
       detailItems: order.details.map((detail) => ({
         ...detail,
         serviceName:
+          detail.layananNama ??
           services.find((service) => service.id === detail.layananId)?.namaLayanan ??
           (draft && draft.service.id === detail.layananId
             ? draft.service.namaLayanan
@@ -86,8 +91,11 @@ export function CustomerPaymentPage() {
 
   if (!draft) {
     return (
-      <div className="service-page service-page--state">
-        Data pembayaran belum tersedia. Silakan isi form layanan terlebih dahulu.
+      <div className="service-page">
+        {user ? <CustomerNavbar user={user} activePage="payment" /> : null}
+        <main className="service-page--state">
+          Data pembayaran belum tersedia. Silakan isi form layanan terlebih dahulu.
+        </main>
       </div>
     )
   }
@@ -111,85 +119,55 @@ export function CustomerPaymentPage() {
     reader.readAsDataURL(file)
   }
 
-  const handleConfirmPayment = () => {
+  const handleConfirmPayment = async () => {
     if (!paymentProofName.trim()) {
       setErrorMessage('Isi bukti pembayaran agar order bisa diproses.')
       return
     }
 
-    const formattedToday = new Date().toISOString().slice(0, 10)
-    const nextOrderId = Math.max(0, ...orders.map((order) => order.id)) + 1
-    const nextPaymentId = Math.max(0, ...payments.map((payment) => payment.id)) + 1
-    const nextDetailId =
-      Math.max(0, ...orders.flatMap((order) => order.details.map((detail) => detail.id))) + 1
-    const nextCodeSuffix = String(nextOrderId).padStart(3, '0')
-    const nextOrderCode = `SAC-${formattedToday.replaceAll('-', '').slice(2)}-${nextCodeSuffix}`
+    setIsSubmittingPayment(true)
 
-    const createdOrder: Order = {
-      id: nextOrderId,
-      userId: draft.user.id,
-      kodeOrder: nextOrderCode,
-      tanggalOrder: formattedToday,
-      status: 'Diproses',
-      totalHarga: draft.totalBayar,
-      alamatPickup: draft.alamatPickup,
-      catatan: draft.catatan || 'Tidak ada catatan tambahan.',
-      estimasiSelesai: formattedToday,
-      details: [
+    try {
+      const createdOrder = await createCustomerOrder({
+        alamat_pickup: draft.alamatPickup,
+        catatan: draft.catatan || undefined,
+        layanans: [
+          {
+            layanan_id: draft.service.id,
+            qty: draft.qty,
+          },
+        ],
+      })
+
+      const createdPayment = await createPaymentByOrderId(createdOrder.id, {
+        metode_pembayaran: 'Transfer Bank',
+      })
+
+      clearCustomerPaymentDraft()
+      setOrders((currentOrders) => [createdOrder, ...currentOrders])
+      setPayments((currentPayments) => [
         {
-          id: nextDetailId,
-          orderId: nextOrderId,
-          layananId: draft.service.id,
-          qty: draft.qty,
-          harga: draft.service.harga,
-          subtotal: draft.totalBayar,
+          ...createdPayment,
+          buktiPembayaran: paymentProofName,
         },
-      ],
+        ...currentPayments,
+      ])
+      setPaymentProofName('')
+      setPaymentProofPreview('')
+      setErrorMessage('')
+      setSuccessMessage('Order dan pembayaran berhasil dibuat.')
+      window.location.hash = '#/customer/orders'
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Order gagal dibuat.'
+      setErrorMessage(message)
+    } finally {
+      setIsSubmittingPayment(false)
     }
-
-    const createdPayment: Payment = {
-      id: nextPaymentId,
-      orderId: nextOrderId,
-      metodePembayaran: 'Transfer Bank',
-      status: 'Menunggu Verifikasi',
-      jumlahBayar: draft.totalBayar,
-      tanggalBayar: formattedToday,
-      rekeningTujuan: BANK_ACCOUNT_NUMBER,
-      namaBank: BANK_ACCOUNT_NAME,
-      buktiPembayaran: paymentProofName,
-    }
-
-    appendLocalCustomerOrder(createdOrder, createdPayment)
-    clearCustomerPaymentDraft()
-    setOrders((currentOrders) => [createdOrder, ...currentOrders])
-    setPayments((currentPayments) => [createdPayment, ...currentPayments])
-    setPaymentProofName('')
-    setPaymentProofPreview('')
-    setErrorMessage('')
-    setSuccessMessage('Pembayaran berhasil dicatat. Detail order sudah diperbarui.')
   }
 
   return (
     <div className="service-page">
-      <header className="service-header">
-        <div className="container service-header__inner">
-          <a className="brand-mark" href="#beranda" aria-label="Shoes and Care">
-            <span>SHOES</span>
-            <span>AND</span>
-            <span>CARE</span>
-          </a>
-
-          <div className="service-header__account">
-            <div className="service-header__user">
-              <span>Customer</span>
-              <strong>{draft.user.name}</strong>
-            </div>
-            <ActionButton variant="dark" small onClick={() => void performLogout()}>
-              Logout
-            </ActionButton>
-          </div>
-        </div>
-      </header>
+      <CustomerNavbar user={draft.user} activePage="payment" />
 
       <main className="service-main container">
         <section className="service-hero">
@@ -263,7 +241,7 @@ export function CustomerPaymentPage() {
 
             <div className="service-panel__actions">
               <button className="auth-submit" type="button" onClick={handleConfirmPayment}>
-                Konfirmasi Pembayaran
+                {isSubmittingPayment ? 'Memproses...' : 'Konfirmasi Pembayaran'}
               </button>
               <ActionButton href="#/customer/services" variant="light">
                 Batal
@@ -288,7 +266,7 @@ export function CustomerPaymentPage() {
                     <p className="section-kicker">Order {order.kodeOrder}</p>
                     <h3>Pesanan Customer</h3>
                   </div>
-                  <span className="status-pill status-pill--menunggu-verifikasi">
+                  <span className={`status-pill status-pill--${order.status.toLowerCase()}`}>
                     {order.status}
                   </span>
                 </div>

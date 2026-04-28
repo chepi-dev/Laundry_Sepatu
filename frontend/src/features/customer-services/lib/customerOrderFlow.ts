@@ -1,8 +1,6 @@
-import type { Order, Payment, Service, User } from '../../../types/domain'
+import type { Service, User } from '../../../types/domain'
 
 const PAYMENT_DRAFT_KEY = 'laundry_customer_payment_draft'
-const LOCAL_ORDERS_KEY = 'laundry_customer_local_orders'
-const LOCAL_PAYMENTS_KEY = 'laundry_customer_local_payments'
 
 export type CustomerPaymentDraft = {
   user: User
@@ -37,20 +35,4 @@ export function getCustomerPaymentDraft() {
 
 export function clearCustomerPaymentDraft() {
   window.sessionStorage.removeItem(PAYMENT_DRAFT_KEY)
-}
-
-export function appendLocalCustomerOrder(order: Order, payment: Payment) {
-  const currentOrders = readStorageItem<Order[]>(LOCAL_ORDERS_KEY, [])
-  const currentPayments = readStorageItem<Payment[]>(LOCAL_PAYMENTS_KEY, [])
-
-  window.sessionStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify([order, ...currentOrders]))
-  window.sessionStorage.setItem(LOCAL_PAYMENTS_KEY, JSON.stringify([payment, ...currentPayments]))
-}
-
-export function getLocalCustomerOrders() {
-  return readStorageItem<Order[]>(LOCAL_ORDERS_KEY, [])
-}
-
-export function getLocalCustomerPayments() {
-  return readStorageItem<Payment[]>(LOCAL_PAYMENTS_KEY, [])
 }

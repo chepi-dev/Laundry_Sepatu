@@ -23,9 +23,10 @@ export type OrderDetail = {
   qty: number
   harga: number
   subtotal: number
+  layananNama?: string
 }
 
-export type OrderStatus = 'Diproses' | 'Pickup' | 'Dicuci' | 'Selesai'
+export type OrderStatus = 'Pending' | 'Diproses' | 'Pickup' | 'Dicuci' | 'Selesai'
 
 export type Order = {
   id: number
@@ -40,7 +41,7 @@ export type Order = {
   details: OrderDetail[]
 }
 
-export type PaymentStatus = 'Lunas' | 'Menunggu Verifikasi'
+export type PaymentStatus = 'Lunas' | 'Menunggu Verifikasi' | 'Gagal'
 
 export type Payment = {
   id: number

@@ -92,7 +92,36 @@ export function AdminDashboardPage() {
           </article>
         </section>
 
-      
+        <section className="dashboard-services-grid">
+          <article className="dashboard-service-card admin-summary-card">
+            <h3>Order Masuk</h3>
+            <p>Kelola seluruh antrian pengerjaan dalam halaman khusus.</p>
+            <ActionButton href="#/dashboard/admin/orders" variant="light" small>
+              Buka Halaman
+            </ActionButton>
+          </article>
+          <article className="dashboard-service-card admin-summary-card">
+            <h3>Verifikasi Pembayaran</h3>
+            <p>Tinjau bukti transfer customer tanpa bercampur dengan panel lain.</p>
+            <ActionButton href="#/dashboard/admin/payments" variant="light" small>
+              Buka Halaman
+            </ActionButton>
+          </article>
+          <article className="dashboard-service-card admin-summary-card">
+            <h3>Kelola Layanan</h3>
+            <p>Tambah, edit, dan hapus layanan pada halaman terpisah.</p>
+            <ActionButton href="#/dashboard/admin/services" variant="light" small>
+              Buka Halaman
+            </ActionButton>
+          </article>
+          <article className="dashboard-service-card admin-summary-card">
+            <h3>Datang Langsung</h3>
+            <p>Input pelanggan toko tanpa memenuhi dashboard utama.</p>
+            <ActionButton href="#/dashboard/admin/walk-in" variant="light" small>
+              Buka Halaman
+            </ActionButton>
+          </article>
+        </section>
       </main>
     </div>
   )

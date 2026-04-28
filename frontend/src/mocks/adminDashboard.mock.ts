@@ -1,35 +1,28 @@
-import {
-  mapOrderApiToModel,
-  mapOrderDetailApiToModel,
-  mapPaymentApiToModel,
-  mapServiceApiToModel,
-  mapUserApiToModel,
-} from '../api/mappers'
 import type {
-  ApiOrder,
-  ApiOrderDetail,
-  ApiPayment,
-  ApiService,
-  ApiUser,
-} from '../types/api'
-import type { AdminDashboardData } from '../types/domain'
+  AdminDashboardData,
+  Order,
+  OrderDetail,
+  Payment,
+  Service,
+  User,
+} from '../types/domain'
 
-const mockAdmin: ApiUser = {
+const mockAdmin: User = {
   id: 1,
   name: 'Admin Shoes Care',
   email: 'admin@shoesandcare.id',
   role: 'admin',
-  no_hp: '+62 811-2222-1111',
+  noHp: '+62 811-2222-1111',
   alamat: 'Workshop Pusat, Yogyakarta',
 }
 
-const mockCustomers: ApiUser[] = [
+const mockCustomers: User[] = [
   {
     id: 12,
     name: 'Rafi Pratama',
     email: 'rafi.pratama@mail.com',
     role: 'customer',
-    no_hp: '+62 895-6201-73070',
+    noHp: '+62 895-6201-73070',
     alamat: 'Jl. Kaliurang Km 7, Sleman, Yogyakarta',
   },
   {
@@ -37,7 +30,7 @@ const mockCustomers: ApiUser[] = [
     name: 'Nabila Putri',
     email: 'nabila.putri@mail.com',
     role: 'customer',
-    no_hp: '+62 812-4455-7788',
+    noHp: '+62 812-4455-7788',
     alamat: 'Jl. Gejayan, Sleman, Yogyakarta',
   },
   {
@@ -45,156 +38,152 @@ const mockCustomers: ApiUser[] = [
     name: 'Yoga Saputra',
     email: 'yoga.saputra@mail.com',
     role: 'customer',
-    no_hp: '+62 857-1900-4567',
+    noHp: '+62 857-1900-4567',
     alamat: 'Jl. Magelang, Yogyakarta',
   },
 ]
 
-const mockServices: ApiService[] = [
+const mockServices: Service[] = [
   {
     id: 1,
-    nama_layanan: 'Deep Cleaning',
+    namaLayanan: 'Deep Cleaning',
     harga: 50000,
     deskripsi: 'Pembersihan menyeluruh untuk upper, midsole, insole, dan area detail.',
   },
   {
     id: 2,
-    nama_layanan: 'Unyellowing',
+    namaLayanan: 'Unyellowing',
     harga: 100000,
     deskripsi: 'Perawatan khusus untuk mengurangi warna kuning pada midsole putih.',
   },
   {
     id: 3,
-    nama_layanan: 'Repaint',
+    namaLayanan: 'Repaint',
     harga: 185000,
     deskripsi: 'Pengecatan ulang dengan material khusus agar tampilan kembali segar.',
   },
   {
     id: 4,
-    nama_layanan: 'Antar Jemput',
+    namaLayanan: 'Antar Jemput',
     harga: 0,
     deskripsi: 'Layanan pickup dan delivery untuk customer yang tidak sempat ke workshop.',
   },
 ]
 
-const mockOrderDetails: ApiOrderDetail[] = [
+const mockOrderDetails: OrderDetail[] = [
   {
     id: 1,
-    order_id: 101,
-    layanan_id: 1,
+    orderId: 101,
+    layananId: 1,
     qty: 1,
     harga: 50000,
     subtotal: 50000,
   },
   {
     id: 2,
-    order_id: 101,
-    layanan_id: 2,
+    orderId: 101,
+    layananId: 2,
     qty: 1,
     harga: 100000,
     subtotal: 100000,
   },
   {
     id: 3,
-    order_id: 102,
-    layanan_id: 3,
+    orderId: 102,
+    layananId: 3,
     qty: 1,
     harga: 185000,
     subtotal: 185000,
   },
   {
     id: 4,
-    order_id: 103,
-    layanan_id: 1,
+    orderId: 103,
+    layananId: 1,
     qty: 2,
     harga: 50000,
     subtotal: 100000,
   },
 ]
 
-const mockOrders: ApiOrder[] = [
+const mockOrders: Omit<Order, 'details'>[] = [
   {
     id: 101,
-    user_id: 12,
-    kode_order: 'SAC-240423-001',
-    tanggal_order: '2026-04-23',
+    userId: 12,
+    kodeOrder: 'SAC-240423-001',
+    tanggalOrder: '2026-04-23',
     status: 'Dicuci',
-    total_harga: 150000,
-    alamat_pickup: 'Jl. Kaliurang Km 7, Sleman, Yogyakarta',
+    totalHarga: 150000,
+    alamatPickup: 'Jl. Kaliurang Km 7, Sleman, Yogyakarta',
     catatan: 'Sepatu putih, ada noda membandel di midsole kanan.',
-    estimasi_selesai: '2026-04-25',
+    estimasiSelesai: '2026-04-25',
   },
   {
     id: 102,
-    user_id: 13,
-    kode_order: 'SAC-240422-002',
-    tanggal_order: '2026-04-22',
+    userId: 13,
+    kodeOrder: 'SAC-240422-002',
+    tanggalOrder: '2026-04-22',
     status: 'Diproses',
-    total_harga: 185000,
-    alamat_pickup: 'Jl. Gejayan, Sleman, Yogyakarta',
+    totalHarga: 185000,
+    alamatPickup: 'Jl. Gejayan, Sleman, Yogyakarta',
     catatan: 'Minta repaint warna tetap original.',
-    estimasi_selesai: '2026-04-26',
+    estimasiSelesai: '2026-04-26',
   },
   {
     id: 103,
-    user_id: 14,
-    kode_order: 'SAC-240421-003',
-    tanggal_order: '2026-04-21',
+    userId: 14,
+    kodeOrder: 'SAC-240421-003',
+    tanggalOrder: '2026-04-21',
     status: 'Pickup',
-    total_harga: 100000,
-    alamat_pickup: 'Jl. Magelang, Yogyakarta',
+    totalHarga: 100000,
+    alamatPickup: 'Jl. Magelang, Yogyakarta',
     catatan: 'Butuh pickup sore hari.',
-    estimasi_selesai: '2026-04-24',
+    estimasiSelesai: '2026-04-24',
   },
 ]
 
-const mockPayments: ApiPayment[] = [
+const mockPayments: Payment[] = [
   {
     id: 1,
-    order_id: 101,
-    metode_pembayaran: 'Transfer Bank',
+    orderId: 101,
+    metodePembayaran: 'Transfer Bank',
     status: 'Menunggu Verifikasi',
-    jumlah_bayar: 150000,
-    tanggal_bayar: '2026-04-23',
-    rekening_tujuan: '1234567890',
-    nama_bank: 'BCA a.n. Shoes and Care',
-    bukti_pembayaran: 'bukti-101.jpg',
+    jumlahBayar: 150000,
+    tanggalBayar: '2026-04-23',
+    rekeningTujuan: '1234567890',
+    namaBank: 'BCA a.n. Shoes and Care',
+    buktiPembayaran: 'bukti-101.jpg',
   },
   {
     id: 2,
-    order_id: 102,
-    metode_pembayaran: 'QRIS',
+    orderId: 102,
+    metodePembayaran: 'QRIS',
     status: 'Lunas',
-    jumlah_bayar: 185000,
-    tanggal_bayar: '2026-04-22',
-    rekening_tujuan: '1234567890',
-    nama_bank: 'BCA a.n. Shoes and Care',
-    bukti_pembayaran: 'bukti-102.jpg',
+    jumlahBayar: 185000,
+    tanggalBayar: '2026-04-22',
+    rekeningTujuan: '1234567890',
+    namaBank: 'BCA a.n. Shoes and Care',
+    buktiPembayaran: 'bukti-102.jpg',
   },
   {
     id: 3,
-    order_id: 103,
-    metode_pembayaran: 'Transfer Bank',
+    orderId: 103,
+    metodePembayaran: 'Transfer Bank',
     status: 'Menunggu Verifikasi',
-    jumlah_bayar: 100000,
-    tanggal_bayar: '2026-04-21',
-    rekening_tujuan: '1234567890',
-    nama_bank: 'BCA a.n. Shoes and Care',
-    bukti_pembayaran: 'bukti-103.jpg',
+    jumlahBayar: 100000,
+    tanggalBayar: '2026-04-21',
+    rekeningTujuan: '1234567890',
+    namaBank: 'BCA a.n. Shoes and Care',
+    buktiPembayaran: 'bukti-103.jpg',
   },
 ]
 
 export const adminDashboardMock: AdminDashboardData = {
-  admin: mapUserApiToModel(mockAdmin),
-  customers: mockCustomers.map(mapUserApiToModel),
-  services: mockServices.map(mapServiceApiToModel),
-  orders: mockOrders.map((order) =>
-    mapOrderApiToModel(
-      order,
-      mockOrderDetails
-        .filter((detail) => detail.order_id === order.id)
-        .map(mapOrderDetailApiToModel),
-    ),
-  ),
-  payments: mockPayments.map(mapPaymentApiToModel),
+  admin: mockAdmin,
+  customers: mockCustomers,
+  services: mockServices,
+  orders: mockOrders.map((order) => ({
+    ...order,
+    details: mockOrderDetails.filter((detail) => detail.orderId === order.id),
+  })),
+  payments: mockPayments,
 }

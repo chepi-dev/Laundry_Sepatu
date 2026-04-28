@@ -1,11 +1,11 @@
-import { logout } from '../../../api/auth.api'
+import { logout } from '../api/auth.api'
 import { clearSessionUser } from './session'
 
 export async function performLogout() {
   try {
     await logout()
   } catch {
-    clearSessionUser()
+    // Token lokal tetap dibersihkan agar sesi frontend tidak tersisa.
   }
 
   clearSessionUser()
