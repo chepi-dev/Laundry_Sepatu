@@ -4,7 +4,7 @@ import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
 import { getCustomerServicesData } from './api/customerServices.repository'
 import { saveCustomerPaymentDraft } from './lib/customerOrderFlow'
-import { performLogout } from '../auth/lib/logout'
+import { CustomerNavbar } from './components/CustomerNavbar'
 import type { Service, User } from '../../types/domain'
 
 export function CustomerServicesPage() {
@@ -92,25 +92,7 @@ export function CustomerServicesPage() {
 
   return (
     <div className="service-page">
-      <header className="service-header">
-        <div className="container service-header__inner">
-          <a className="brand-mark" href="#beranda" aria-label="Shoes and Care">
-            <span>SHOES</span>
-            <span>AND</span>
-            <span>CARE</span>
-          </a>
-
-          <div className="service-header__account">
-            <div className="service-header__user">
-              <span>Customer</span>
-              <strong>{user.name}</strong>
-            </div>
-            <ActionButton variant="dark" small onClick={() => void performLogout()}>
-              Logout
-            </ActionButton>
-          </div>
-        </div>
-      </header>
+      <CustomerNavbar user={user} activePage="services" />
 
       <main className="service-main container">
         <section className="service-hero">

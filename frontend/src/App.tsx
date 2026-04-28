@@ -6,14 +6,14 @@ import { AdminOrdersPage } from './features/admin-dashboard/AdminOrdersPage'
 import { AdminPaymentsPage } from './features/admin-dashboard/AdminPaymentsPage'
 import { AdminServicesPage } from './features/admin-dashboard/AdminServicesPage'
 import { AdminWalkInPage } from './features/admin-dashboard/AdminWalkInPage'
+import { CustomerOrderDetailPage } from './features/customer-services/CustomerOrderDetailPage'
 import { CustomerPaymentPage } from './features/customer-services/CustomerPaymentPage'
 import { CustomerServicesPage } from './features/customer-services/CustomerServicesPage'
 import { getCustomerServicesHash } from './features/customer-services/lib/routes'
 import { CustomerDashboardPage } from './features/customer-dashboard/CustomerDashboardPage'
 import { getDashboardHash } from './features/customer-dashboard/lib/dashboard'
 import { landingContent } from './data/landingContent'
-import { getAuthToken } from './api/http'
-import { hasRoleAccess } from './features/auth/lib/session'
+import { getAuthToken, hasRoleAccess } from './features/auth/lib/session'
 import { BlogSection } from './sections/BlogSection'
 import { CtaSection } from './sections/CtaSection'
 import { FooterSection } from './sections/FooterSection'
@@ -54,6 +54,10 @@ function App() {
 
   if (servicesMode === 'payment') {
     return <CustomerPaymentPage />
+  }
+
+  if (servicesMode === 'orders') {
+    return <CustomerOrderDetailPage />
   }
 
   if (dashboardMode === 'customer') {

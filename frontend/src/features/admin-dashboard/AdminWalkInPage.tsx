@@ -1,23 +1,53 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
-import { createWalkInAdminOrder, getAdminDashboardData } from './api/adminDashboard.repository'
+import { createWalkInAdminOrder, getAdminDashboardData, syncAdminServices } from './api/adminDashboard.repository'
 import { performLogout } from '../auth/lib/logout'
-import type { AdminDashboardData } from '../../types/domain'
+import { getServices } from '../services/api/services.api'
+import type { AdminDashboardData, Service } from '../../types/domain'
 
 export function AdminWalkInPage() {
   const [adminData, setAdminData] = useState<AdminDashboardData>(() => getAdminDashboardData())
+  const [services, setServices] = useState<Service[]>([])
   const [walkInName, setWalkInName] = useState('')
   const [walkInEmail, setWalkInEmail] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
   const [walkInAddress, setWalkInAddress] = useState('')
   const [walkInNote, setWalkInNote] = useState('')
-  const [walkInServiceId, setWalkInServiceId] = useState(adminData.services[0]?.id ?? 0)
+  const [walkInServiceId, setWalkInServiceId] = useState(0)
   const [walkInQty, setWalkInQty] = useState(1)
+  const [loadErrorMessage, setLoadErrorMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    getServices()
+      .then((response) => {
+        if (!isMounted) {
+          return
+        }
+
+        setServices(response)
+        setWalkInServiceId(response[0]?.id ?? 0)
+        setAdminData(syncAdminServices(response))
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        const message = error instanceof Error ? error.message : 'Gagal memuat layanan.'
+        setLoadErrorMessage(message)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const selectedWalkInService =
-    adminData.services.find((service) => service.id === walkInServiceId) ?? adminData.services[0]
+    services.find((service) => service.id === walkInServiceId) ?? services[0]
   const walkInTotal = (selectedWalkInService?.harga ?? 0) * walkInQty
 
   const resetWalkInForm = () => {
@@ -26,7 +56,7 @@ export function AdminWalkInPage() {
     setWalkInPhone('')
     setWalkInAddress('')
     setWalkInNote('')
-    setWalkInServiceId(adminData.services[0]?.id ?? 0)
+    setWalkInServiceId(services[0]?.id ?? 0)
     setWalkInQty(1)
   }
 
@@ -106,12 +136,14 @@ export function AdminWalkInPage() {
         </section>
 
         <section className="dashboard-panel dashboard-panel--highlight">
-            <div className="dashboard-panel__header">
-              <div>
-                <p className="section-kicker">Form Pelanggan Langsung</p>
-                <h2>Order Cash di Toko</h2>
-              </div>
+          <div className="dashboard-panel__header">
+            <div>
+              <p className="section-kicker">Form Pelanggan Langsung</p>
+              <h2>Order Cash di Toko</h2>
             </div>
+          </div>
+
+          {loadErrorMessage ? <p className="service-error">{loadErrorMessage}</p> : null}
 
           <div className="walkin-layout">
             <div className="dashboard-order-form">
@@ -145,7 +177,7 @@ export function AdminWalkInPage() {
                   value={walkInServiceId}
                   onChange={(event) => setWalkInServiceId(Number(event.target.value))}
                 >
-                  {adminData.services.map((service) => (
+                  {services.map((service) => (
                     <option key={service.id} value={service.id}>
                       {service.namaLayanan}
                     </option>
@@ -159,9 +191,7 @@ export function AdminWalkInPage() {
                   type="number"
                   min="1"
                   value={walkInQty}
-                  onChange={(event) =>
-                    setWalkInQty(Math.max(1, Number(event.target.value) || 1))
-                  }
+                  onChange={(event) => setWalkInQty(Math.max(1, Number(event.target.value) || 1))}
                 />
               </label>
               <FormField

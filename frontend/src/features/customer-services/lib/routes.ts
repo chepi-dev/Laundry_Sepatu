@@ -7,5 +7,9 @@ export function getCustomerServicesHash(hash: string) {
     return 'payment'
   }
 
+  if (hash === '#/customer/orders') {
+    return 'orders'
+  }
+
   return null
 }

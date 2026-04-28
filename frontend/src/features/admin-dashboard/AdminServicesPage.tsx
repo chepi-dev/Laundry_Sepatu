@@ -1,21 +1,53 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
-import {
-  deleteAdminService,
-  getAdminDashboardData,
-  saveAdminService,
-} from './api/adminDashboard.repository'
+import { getAdminDashboardData, syncAdminServices } from './api/adminDashboard.repository'
+import { createService, deleteService, getServices, updateService } from '../services/api/services.api'
 import type { AdminDashboardData, Service } from '../../types/domain'
 
 export function AdminServicesPage() {
   const [adminData, setAdminData] = useState<AdminDashboardData>(() => getAdminDashboardData())
+  const [services, setServices] = useState<Service[]>([])
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null)
   const [serviceName, setServiceName] = useState('')
   const [servicePrice, setServicePrice] = useState('')
   const [serviceDescription, setServiceDescription] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    getServices()
+      .then((response) => {
+        if (!isMounted) {
+          return
+        }
+
+        setServices(response)
+        setAdminData(syncAdminServices(response))
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return
+        }
+
+        const message = error instanceof Error ? error.message : 'Gagal memuat data layanan.'
+        setErrorMessage(message)
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const resetServiceForm = () => {
     setEditingServiceId(null)
@@ -24,24 +56,45 @@ export function AdminServicesPage() {
     setServiceDescription('')
   }
 
-  const handleSaveService = () => {
+  const handleSaveService = async () => {
     const trimmedName = serviceName.trim()
     const trimmedDescription = serviceDescription.trim()
     const parsedPrice = Number(servicePrice)
 
     if (!trimmedName || !trimmedDescription || Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      setErrorMessage('Isi data layanan dengan benar sebelum disimpan.')
       return
     }
 
-    setAdminData(
-      saveAdminService({
-        id: editingServiceId,
-        namaLayanan: trimmedName,
+    setIsSaving(true)
+    setErrorMessage('')
+
+    try {
+      const payload = {
+        nama_layanan: trimmedName,
         harga: parsedPrice,
         deskripsi: trimmedDescription,
-      }),
-    )
-    resetServiceForm()
+      }
+
+      const savedService =
+        editingServiceId !== null
+          ? await updateService(editingServiceId, payload)
+          : await createService(payload)
+
+      const nextServices =
+        editingServiceId !== null
+          ? services.map((service) => (service.id === editingServiceId ? savedService : service))
+          : [savedService, ...services]
+
+      setServices(nextServices)
+      setAdminData(syncAdminServices(nextServices))
+      resetServiceForm()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal menyimpan layanan.'
+      setErrorMessage(message)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleEditService = (service: Service) => {
@@ -49,13 +102,24 @@ export function AdminServicesPage() {
     setServiceName(service.namaLayanan)
     setServicePrice(String(service.harga))
     setServiceDescription(service.deskripsi)
+    setErrorMessage('')
   }
 
-  const handleDeleteService = (serviceId: number) => {
-    setAdminData(deleteAdminService(serviceId))
+  const handleDeleteService = async (serviceId: number) => {
+    setErrorMessage('')
 
-    if (editingServiceId === serviceId) {
-      resetServiceForm()
+    try {
+      await deleteService(serviceId)
+      const nextServices = services.filter((service) => service.id !== serviceId)
+      setServices(nextServices)
+      setAdminData(syncAdminServices(nextServices))
+
+      if (editingServiceId === serviceId) {
+        resetServiceForm()
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Gagal menghapus layanan.'
+      setErrorMessage(message)
     }
   }
 
@@ -148,9 +212,14 @@ export function AdminServicesPage() {
                 value={serviceDescription}
                 onChange={setServiceDescription}
               />
+              {errorMessage ? <p className="service-error">{errorMessage}</p> : null}
               <div className="admin-service-form__actions">
                 <button className="auth-submit" type="button" onClick={handleSaveService}>
-                  {editingServiceId !== null ? 'Update Layanan' : 'Tambah Layanan'}
+                  {isSaving
+                    ? 'Memproses...'
+                    : editingServiceId !== null
+                      ? 'Update Layanan'
+                      : 'Tambah Layanan'}
                 </button>
                 {editingServiceId !== null ? (
                   <button
@@ -173,8 +242,10 @@ export function AdminServicesPage() {
               </div>
             </div>
 
+            {isLoading ? <p>Memuat layanan...</p> : null}
+
             <div className="admin-service-summary">
-              {adminData.services.map((service) => (
+              {services.map((service) => (
                 <div key={service.id} className="dashboard-service-card admin-service-card">
                   <h3>{service.namaLayanan}</h3>
                   <p>{service.deskripsi}</p>
@@ -190,7 +261,7 @@ export function AdminServicesPage() {
                     <button
                       className="service-select-button admin-service-card__delete"
                       type="button"
-                      onClick={() => handleDeleteService(service.id)}
+                      onClick={() => void handleDeleteService(service.id)}
                     >
                       Hapus
                     </button>
