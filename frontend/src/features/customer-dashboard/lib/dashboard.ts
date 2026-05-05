@@ -2,6 +2,7 @@ export type DashboardMode =
   | 'customer'
   | 'admin'
   | 'admin-orders'
+  | 'admin-completed-orders'
   | 'admin-payments'
   | 'admin-services'
   | 'admin-walkin'
@@ -18,6 +19,10 @@ export function getDashboardHash(hash: string): DashboardMode | null {
 
   if (hash === '#/dashboard/admin/orders') {
     return 'admin-orders'
+  }
+
+  if (hash === '#/dashboard/admin/orders/completed') {
+    return 'admin-completed-orders'
   }
 
   if (hash === '#/dashboard/admin/payments') {

@@ -5,8 +5,8 @@ export type AuthApiUser = {
   name: string
   email: string
   role: UserRole
-  no_hp: string
-  alamat: string
+  no_hp: string | null
+  alamat: string | null
 }
 
 export type LoginPayload = {
@@ -21,6 +21,11 @@ export type RegisterPayload = {
   no_hp: string
   alamat: string
   role?: UserRole
+}
+
+export type UpdateProfilePayload = {
+  name: string
+  no_hp: string
 }
 
 export type AuthResponse = {

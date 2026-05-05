@@ -92,7 +92,7 @@ export function CustomerServicesPage() {
 
   return (
     <div className="service-page">
-      <CustomerNavbar user={user} activePage="services" />
+      <CustomerNavbar user={user} activePage="services" onUserUpdated={setUser} />
 
       <main className="service-main container">
         <section className="service-hero">

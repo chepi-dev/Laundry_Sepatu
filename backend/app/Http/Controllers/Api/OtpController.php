@@ -79,5 +79,5 @@ class OtpController extends Controller
         'success' => true,
         'message' => 'OTP berhasil diverifikasi'
     ], 200);
-}
+    }
 }

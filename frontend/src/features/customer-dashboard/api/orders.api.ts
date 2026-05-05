@@ -31,6 +31,10 @@ function mapOrderStatus(status: string): OrderStatus {
       return 'Dicuci'
     case 'selesai':
       return 'Selesai'
+    case 'diambil':
+      return 'Diambil'
+    case 'dibatalkan':
+      return 'Dibatalkan'
     default:
       return 'Pending'
   }
@@ -48,7 +52,7 @@ function mapOrderDetail(detail: ApiOrderDetail): OrderDetail {
   }
 }
 
-function mapOrder(order: ApiOrder): Order {
+export function mapOrder(order: ApiOrder): Order {
   return {
     id: order.id,
     userId: order.user_id,

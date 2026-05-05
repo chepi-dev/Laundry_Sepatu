@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActionButton } from '../../../components/ui/ActionButton'
 import type { User } from '../../../types/domain'
 import { performLogout } from '../../auth/lib/logout'
@@ -36,10 +36,21 @@ const customerNavItems: Array<{
 type CustomerNavbarProps = {
   user: User
   activePage: CustomerNavbarPage
+  onUserUpdated?: (user: User) => void
 }
 
-export function CustomerNavbar({ user, activePage }: CustomerNavbarProps) {
+export function CustomerNavbar({ user, activePage, onUserUpdated }: CustomerNavbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [profileUser, setProfileUser] = useState(user)
+
+  useEffect(() => {
+    setProfileUser(user)
+  }, [user])
+
+  const handleUserUpdated = (updatedUser: User) => {
+    setProfileUser(updatedUser)
+    onUserUpdated?.(updatedUser)
+  }
 
   return (
     <header className="service-header customer-navbar">
@@ -65,9 +76,10 @@ export function CustomerNavbar({ user, activePage }: CustomerNavbarProps) {
 
         <div className="service-header__account customer-navbar__actions">
           <CustomerProfilePopover
-            user={user}
+            user={profileUser}
             isOpen={isProfileOpen}
             onToggle={() => setIsProfileOpen((current) => !current)}
+            onUserUpdated={handleUserUpdated}
           />
           <ActionButton variant="dark" small onClick={() => void performLogout()}>
             Logout

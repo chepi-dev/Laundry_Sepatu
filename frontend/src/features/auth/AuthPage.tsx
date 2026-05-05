@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import type { LandingContent } from '../../types/content'
@@ -19,6 +19,13 @@ type PendingOtpPayload = {
   password?: string
   phone?: string
   address?: string
+}
+
+type AuthAlertProps = {
+  variant: 'error' | 'success'
+  title: string
+  message: string
+  onDismiss: () => void
 }
 
 const OTP_STORAGE_KEY = 'laundry_pending_otp'
@@ -87,6 +94,56 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Terjadi kesalahan saat memproses permintaan.'
 }
 
+function getErrorTitle(mode: AuthMode) {
+  if (mode === 'login') {
+    return 'Login belum berhasil'
+  }
+
+  if (mode === 'register') {
+    return 'Pendaftaran belum berhasil'
+  }
+
+  return 'Proses belum berhasil'
+}
+
+function getSuccessTitle(mode: AuthMode) {
+  if (mode === 'register' || mode === 'verify-email') {
+    return 'Kode verifikasi terkirim'
+  }
+
+  if (mode === 'send-otp') {
+    return 'Kode OTP terkirim'
+  }
+
+  return 'Berhasil'
+}
+
+function AuthAlert({ variant, title, message, onDismiss }: AuthAlertProps) {
+  return (
+    <div
+      className={`auth-alert auth-alert--${variant}`}
+      role={variant === 'error' ? 'alert' : 'status'}
+      aria-live={variant === 'error' ? 'assertive' : 'polite'}
+    >
+      <span className="auth-alert__icon" aria-hidden="true">
+        {variant === 'error' ? '!' : 'OK'}
+      </span>
+      <span className="auth-alert__content">
+        <strong>{title}</strong>
+        <span>{message}</span>
+      </span>
+      <button
+        type="button"
+        className="auth-alert__close"
+        onClick={onDismiss}
+        aria-label="Tutup alert"
+      >
+        X
+      </button>
+    </div>
+  )
+}
+
 export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
   const content = authContent[mode]
   const pendingOtp = mode === 'send-otp' || mode === 'verify-email' ? getPendingOtp() : null
@@ -100,6 +157,10 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
   const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResending, setIsResending] = useState(false)
+
+  useEffect(() => {
+    setErrorMessage('')
+  }, [mode])
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -122,7 +183,7 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
       }
 
       if (mode === 'register') {
-        await sendOtp({ email })
+        const response = await sendOtp({ email })
         savePendingOtp({
           flow: 'register',
           name,
@@ -131,16 +192,18 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
           phone,
           address,
         })
+        setSuccessMessage(response.message || 'Kode verifikasi sudah dikirim ke email Anda.')
         window.location.hash = '#/auth/verify-email/register'
         return
       }
 
       if (mode === 'forgot-password') {
-        await sendOtp({ email })
+        const response = await sendOtp({ email })
         savePendingOtp({
           flow: 'forgot-password',
           email,
         })
+        setSuccessMessage(response.message || 'Kode OTP sudah dikirim ke email Anda.')
         window.location.hash = '#/auth/send-otp/forgot-password'
         return
       }
@@ -183,17 +246,13 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
       }
 
       clearPendingOtp()
-      window.alert(
+      setSuccessMessage(
         'Verifikasi OTP berhasil. Alur reset password siap dilanjutkan setelah endpoint backend ditambahkan.',
       )
       window.location.hash = '#/auth/login'
     } catch (error) {
       const message = getErrorMessage(error)
       setErrorMessage(message)
-
-      if (mode === 'login') {
-        window.alert(message)
-      }
     } finally {
       setIsSubmitting(false)
     }
@@ -405,8 +464,22 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
                 </>
               ) : null}
 
-              {errorMessage ? <p className="auth-error">{errorMessage}</p> : null}
-              {successMessage ? <p className="auth-success">{successMessage}</p> : null}
+              {errorMessage ? (
+                <AuthAlert
+                  variant="error"
+                  title={getErrorTitle(mode)}
+                  message={errorMessage}
+                  onDismiss={() => setErrorMessage('')}
+                />
+              ) : null}
+              {successMessage ? (
+                <AuthAlert
+                  variant="success"
+                  title={getSuccessTitle(mode)}
+                  message={successMessage}
+                  onDismiss={() => setSuccessMessage('')}
+                />
+              ) : null}
 
               <button className="auth-submit" type="submit" disabled={isSubmitting || isResending}>
                 {isSubmitting ? 'Memproses...' : content.submitLabel}

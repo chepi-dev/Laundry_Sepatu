@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
-import { completeAdminOrder, getAdminDashboardData } from './api/adminDashboard.repository'
+import { getAdminDashboardData } from './api/adminDashboard.repository'
 import type { AdminDashboardData, User } from '../../types/domain'
 
 function formatDate(date: string) {
@@ -34,7 +34,7 @@ function getWhatsAppHref(phone: string, customerName: string, orderCode: string)
   return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`
 }
 
-export function AdminOrdersPage() {
+export function AdminCompletedOrdersPage() {
   const [adminData, setAdminData] = useState<AdminDashboardData | null>(null)
   const [loadErrorMessage, setLoadErrorMessage] = useState('')
 
@@ -54,7 +54,7 @@ export function AdminOrdersPage() {
       .catch((error) => {
         if (isMounted) {
           const message =
-            error instanceof Error ? error.message : 'Gagal memuat order admin.'
+            error instanceof Error ? error.message : 'Gagal memuat order selesai.'
           setLoadErrorMessage(message)
         }
       })
@@ -69,29 +69,12 @@ export function AdminOrdersPage() {
   }
 
   if (!adminData) {
-    return <div className="dashboard-page service-page--state">Memuat order admin...</div>
+    return <div className="dashboard-page service-page--state">Memuat order selesai...</div>
   }
 
-  const latestOrders = [...adminData.orders].sort((a, b) =>
-    b.tanggalOrder.localeCompare(a.tanggalOrder),
-  )
-  const activeOrders = latestOrders.filter((order) => order.status !== 'Selesai')
-  const completedOrders = latestOrders.filter((order) => order.status === 'Selesai')
-
-  const handleCompleteOrder = async (orderId: number) => {
-    try {
-      setAdminData(
-        await completeAdminOrder(orderId, {
-          includeCustomers: false,
-          includePayments: false,
-          includeServices: false,
-        }),
-      )
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Gagal menyelesaikan order.'
-      setLoadErrorMessage(message)
-    }
-  }
+  const completedOrders = [...adminData.orders]
+    .filter((order) => order.status === 'Selesai')
+    .sort((a, b) => b.tanggalOrder.localeCompare(a.tanggalOrder))
 
   return (
     <div className="dashboard-page admin-dashboard-page">
@@ -110,10 +93,10 @@ export function AdminOrdersPage() {
 
         <nav className="dashboard-nav dashboard-nav--navbar" aria-label="Menu dashboard admin">
           <a href="#/dashboard/admin">Ringkasan</a>
-          <a className="is-active" href="#/dashboard/admin/orders">
-            Order Masuk
+          <a href="#/dashboard/admin/orders">Order Masuk</a>
+          <a className="is-active" href="#/dashboard/admin/orders/completed">
+            Order Selesai
           </a>
-          <a href="#/dashboard/admin/orders/completed">Order Selesai</a>
           <a href="#/dashboard/admin/payments">Verifikasi</a>
           <a href="#/dashboard/admin/services">Layanan</a>
           <a href="#/dashboard/admin/walk-in">Datang Langsung</a>
@@ -133,16 +116,13 @@ export function AdminOrdersPage() {
       <main className="dashboard-content admin-orders-content">
         <section className="dashboard-hero admin-dashboard-hero admin-compact-hero">
           <div>
-            <p className="section-kicker">Order Masuk</p>
-            <p>
-              Kelola antrian customer dalam tampilan ringkas agar status dan aksi order
-              langsung terlihat.
-            </p>
+            <p className="section-kicker">Order Selesai</p>
+            <p>Daftar order yang sudah selesai dipisahkan dari antrian order masuk.</p>
           </div>
 
           <div className="dashboard-hero__actions">
-            <ActionButton href="#/dashboard/admin" variant="dark" small>
-              Kembali ke Dashboard
+            <ActionButton href="#/dashboard/admin/orders" variant="dark" small>
+              Lihat Order Masuk
             </ActionButton>
           </div>
         </section>
@@ -150,12 +130,12 @@ export function AdminOrdersPage() {
         <section className="dashboard-panel dashboard-panel--highlight admin-orders-panel">
           <div className="dashboard-panel__header">
             <div>
-              <p className="section-kicker">Daftar Order</p>
-              <h2>Antrian Pengerjaan</h2>
+              <p className="section-kicker">Riwayat Order</p>
+              <h2>Sudah Selesai</h2>
             </div>
-            <div className="admin-order-summary" aria-label="Ringkasan order">
-              <span>{activeOrders.length} aktif</span>
-              <strong>{completedOrders.length} selesai</strong>
+            <div className="admin-order-summary" aria-label="Ringkasan order selesai">
+              <span>{completedOrders.length} selesai</span>
+              <strong>{adminData.orders.length} order</strong>
             </div>
           </div>
 
@@ -170,16 +150,14 @@ export function AdminOrdersPage() {
                   <th>Total</th>
                   <th>Alamat Pickup</th>
                   <th>Status</th>
-                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {activeOrders.map((order) => {
+                {completedOrders.map((order) => {
                   const customer = getCustomer(adminData.customers, order.userId)
                   const customerName = customer?.name ?? 'Pelanggan'
                   const customerPhone = customer?.noHp ?? '-'
                   const whatsappHref = getWhatsAppHref(customerPhone, customerName, order.kodeOrder)
-                  const canOpenWhatsApp = Boolean(whatsappHref)
 
                   return (
                     <tr key={order.id}>
@@ -190,7 +168,7 @@ export function AdminOrdersPage() {
                       <td>
                         <span className="admin-order-phone">
                           <span>{customerPhone}</span>
-                          {canOpenWhatsApp ? (
+                          {whatsappHref ? (
                             <a href={whatsappHref} target="_blank" rel="noreferrer">
                               WA
                             </a>
@@ -205,26 +183,7 @@ export function AdminOrdersPage() {
                         <span className="admin-order-address">{order.alamatPickup}</span>
                       </td>
                       <td>
-                        <span
-                          className={`status-pill status-pill--${order.status
-                            .toLowerCase()
-                            .replaceAll(' ', '-')}`}
-                        >
-                          {order.status}
-                        </span>
-                      </td>
-                      <td>
-                        {order.status === 'Selesai' ? (
-                          <span className="admin-payment-done">Selesai</span>
-                        ) : (
-                          <button
-                            className="admin-order-action"
-                            type="button"
-                            onClick={() => void handleCompleteOrder(order.id)}
-                          >
-                            Selesai
-                          </button>
-                        )}
+                        <span className="status-pill status-pill--selesai">{order.status}</span>
                       </td>
                     </tr>
                   )

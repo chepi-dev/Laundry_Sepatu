@@ -1,11 +1,45 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
-import { getAdminDashboardData } from './api/adminDashboard.repository'
+import { getCurrentUser } from '../auth/api/auth.api'
+import { getAdminCustomers } from './api/adminDashboard.repository'
 import { performLogout } from '../auth/lib/logout'
-import type { AdminDashboardData } from '../../types/domain'
+import type { User } from '../../types/domain'
 
 export function AdminCustomersPage() {
-  const [adminData] = useState<AdminDashboardData>(() => getAdminDashboardData())
+  const [admin, setAdmin] = useState<User | null>(null)
+  const [customers, setCustomers] = useState<User[]>([])
+  const [loadErrorMessage, setLoadErrorMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    Promise.all([getCurrentUser(), getAdminCustomers()])
+      .then(([currentAdmin, customerData]) => {
+        if (isMounted) {
+          setAdmin(currentAdmin)
+          setCustomers(customerData)
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          const message =
+            error instanceof Error ? error.message : 'Gagal memuat data pelanggan.'
+          setLoadErrorMessage(message)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  if (loadErrorMessage) {
+    return <div className="dashboard-page service-page--state">{loadErrorMessage}</div>
+  }
+
+  if (!admin) {
+    return <div className="dashboard-page service-page--state">Memuat data pelanggan...</div>
+  }
 
   return (
     <div className="dashboard-page admin-dashboard-page">
@@ -18,13 +52,14 @@ export function AdminCustomersPage() {
           </a>
 
           <div className="dashboard-profile dashboard-profile--navbar">
-            <h2>{adminData.admin.name}</h2>
+            <h2>{admin.name}</h2>
           </div>
         </div>
 
         <nav className="dashboard-nav dashboard-nav--navbar" aria-label="Menu admin pelanggan">
           <a href="#/dashboard/admin">Ringkasan</a>
           <a href="#/dashboard/admin/orders">Order Masuk</a>
+          <a href="#/dashboard/admin/orders/completed">Order Selesai</a>
           <a href="#/dashboard/admin/payments">Verifikasi</a>
           <a href="#/dashboard/admin/services">Layanan</a>
           <a href="#/dashboard/admin/walk-in">Datang Langsung</a>
@@ -81,7 +116,7 @@ export function AdminCustomersPage() {
                 </tr>
               </thead>
               <tbody>
-                {adminData.customers.map((customer) => (
+                {customers.map((customer) => (
                   <tr key={customer.id}>
                     <td>{customer.id}</td>
                     <td>{customer.name}</td>

@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
-import { FormField } from '../../components/ui/FormField'
 import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
-import { getAdminDashboardData, syncAdminServices } from './api/adminDashboard.repository'
+import { getCurrentUser } from '../auth/api/auth.api'
 import { createService, deleteService, getServices, updateService } from '../services/api/services.api'
-import type { AdminDashboardData, Service } from '../../types/domain'
+import type { Service, User } from '../../types/domain'
 
 export function AdminServicesPage() {
-  const [adminData, setAdminData] = useState<AdminDashboardData>(() => getAdminDashboardData())
+  const [admin, setAdmin] = useState<User | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [editingServiceId, setEditingServiceId] = useState<number | null>(null)
   const [serviceName, setServiceName] = useState('')
@@ -21,14 +20,14 @@ export function AdminServicesPage() {
   useEffect(() => {
     let isMounted = true
 
-    getServices()
-      .then((response) => {
+    Promise.all([getCurrentUser(), getServices()])
+      .then(([currentAdmin, response]) => {
         if (!isMounted) {
           return
         }
 
+        setAdmin(currentAdmin)
         setServices(response)
-        setAdminData(syncAdminServices(response))
       })
       .catch((error) => {
         if (!isMounted) {
@@ -87,7 +86,6 @@ export function AdminServicesPage() {
           : [savedService, ...services]
 
       setServices(nextServices)
-      setAdminData(syncAdminServices(nextServices))
       resetServiceForm()
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Gagal menyimpan layanan.'
@@ -112,7 +110,6 @@ export function AdminServicesPage() {
       await deleteService(serviceId)
       const nextServices = services.filter((service) => service.id !== serviceId)
       setServices(nextServices)
-      setAdminData(syncAdminServices(nextServices))
 
       if (editingServiceId === serviceId) {
         resetServiceForm()
@@ -121,6 +118,14 @@ export function AdminServicesPage() {
       const message = error instanceof Error ? error.message : 'Gagal menghapus layanan.'
       setErrorMessage(message)
     }
+  }
+
+  if (errorMessage && !admin) {
+    return <div className="dashboard-page service-page--state">{errorMessage}</div>
+  }
+
+  if (!admin) {
+    return <div className="dashboard-page service-page--state">Memuat layanan admin...</div>
   }
 
   return (
@@ -134,13 +139,14 @@ export function AdminServicesPage() {
           </a>
 
           <div className="dashboard-profile dashboard-profile--navbar">
-            <h2>{adminData.admin.name}</h2>
+            <h2>{admin.name}</h2>
           </div>
         </div>
 
         <nav className="dashboard-nav dashboard-nav--navbar" aria-label="Menu dashboard admin">
           <a href="#/dashboard/admin">Ringkasan</a>
           <a href="#/dashboard/admin/orders">Order Masuk</a>
+          <a href="#/dashboard/admin/orders/completed">Order Selesai</a>
           <a href="#/dashboard/admin/payments">Verifikasi</a>
           <a className="is-active" href="#/dashboard/admin/services">
             Layanan
@@ -159,13 +165,13 @@ export function AdminServicesPage() {
         </div>
       </header>
 
-      <main className="dashboard-content">
+      <main className="dashboard-content admin-services-content">
         <section className="dashboard-hero admin-dashboard-hero admin-compact-hero">
           <div>
             <p className="section-kicker">Layanan Aktif</p>
             <p>
-              Kelola data layanan dalam halaman terpisah agar proses tambah, edit, dan
-              hapus layanan lebih fokus dan tidak bercampur dengan operasional harian.
+              Kelola data layanan dalam tampilan ringkas agar proses tambah, edit, dan hapus
+              lebih cepat.
             </p>
           </div>
 
@@ -176,100 +182,128 @@ export function AdminServicesPage() {
           </div>
         </section>
 
-        <section className="dashboard-grid admin-dashboard-grid">
-          <article className="dashboard-panel dashboard-panel--highlight">
-            <div className="dashboard-panel__header">
-              <div>
-                <p className="section-kicker">Form Layanan</p>
-                <h2>Kelola Layanan</h2>
-              </div>
+        <section className="dashboard-panel admin-services-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <p className="section-kicker">Form Layanan</p>
+              <h2>{editingServiceId !== null ? 'Edit Layanan' : 'Tambah Layanan'}</h2>
             </div>
+            <div className="admin-payment-summary" aria-label="Ringkasan layanan">
+              <span>{services.length} layanan</span>
+              <strong>{editingServiceId !== null ? 'Mode edit' : 'Mode tambah'}</strong>
+            </div>
+          </div>
 
-            <div className="admin-service-form">
-              <FormField
+          <div className="admin-service-compact-form">
+            <label className="form-field" htmlFor="admin-service-name">
+              <span>Nama Layanan</span>
+              <input
                 id="admin-service-name"
-                label="Nama Layanan"
                 placeholder="Contoh: Fast Cleaning"
                 value={serviceName}
-                onChange={setServiceName}
+                onChange={(event) => setServiceName(event.target.value)}
               />
-              <label className="form-field" htmlFor="admin-service-price">
-                <span>Harga</span>
-                <input
-                  id="admin-service-price"
-                  type="number"
-                  min="0"
-                  placeholder="Contoh: 75000"
-                  value={servicePrice}
-                  onChange={(event) => setServicePrice(event.target.value)}
-                />
-              </label>
-              <FormField
+            </label>
+            <label className="form-field" htmlFor="admin-service-price">
+              <span>Harga</span>
+              <input
+                id="admin-service-price"
+                type="number"
+                min="0"
+                placeholder="Contoh: 75000"
+                value={servicePrice}
+                onChange={(event) => setServicePrice(event.target.value)}
+              />
+            </label>
+            <label
+              className="form-field admin-service-description-field"
+              htmlFor="admin-service-description"
+            >
+              <span>Deskripsi</span>
+              <input
                 id="admin-service-description"
-                label="Deskripsi"
                 placeholder="Jelaskan treatment layanan ini"
-                as="textarea"
                 value={serviceDescription}
-                onChange={setServiceDescription}
+                onChange={(event) => setServiceDescription(event.target.value)}
               />
-              {errorMessage ? <p className="service-error">{errorMessage}</p> : null}
-              <div className="admin-service-form__actions">
-                <button className="auth-submit" type="button" onClick={handleSaveService}>
-                  {isSaving
-                    ? 'Memproses...'
-                    : editingServiceId !== null
-                      ? 'Update Layanan'
-                      : 'Tambah Layanan'}
+            </label>
+            <div className="admin-service-form__actions admin-service-compact-actions">
+              <button
+                className="admin-payment-action"
+                type="button"
+                disabled={isSaving}
+                onClick={handleSaveService}
+              >
+                {isSaving
+                  ? 'Memproses...'
+                  : editingServiceId !== null
+                    ? 'Update'
+                    : 'Tambah'}
+              </button>
+              {editingServiceId !== null ? (
+                <button className="service-select-button" type="button" onClick={resetServiceForm}>
+                  Batal
                 </button>
-                {editingServiceId !== null ? (
-                  <button
-                    className="service-select-button"
-                    type="button"
-                    onClick={resetServiceForm}
-                  >
-                    Batal Edit
-                  </button>
-                ) : null}
-              </div>
+              ) : null}
             </div>
-          </article>
+          </div>
 
-          <article className="dashboard-panel">
-            <div className="dashboard-panel__header">
-              <div>
-                <p className="section-kicker">Daftar Layanan</p>
-                <h2>Layanan Tersedia</h2>
-              </div>
+          {errorMessage ? <p className="service-error">{errorMessage}</p> : null}
+
+          <div className="dashboard-panel__header admin-service-list-header">
+            <div>
+              <p className="section-kicker">Daftar Layanan</p>
+              <h2>Layanan Tersedia</h2>
             </div>
+          </div>
 
-            {isLoading ? <p>Memuat layanan...</p> : null}
+          {isLoading ? <p>Memuat layanan...</p> : null}
 
-            <div className="admin-service-summary">
-              {services.map((service) => (
-                <div key={service.id} className="dashboard-service-card admin-service-card">
-                  <h3>{service.namaLayanan}</h3>
-                  <p>{service.deskripsi}</p>
-                  <strong>{formatRupiah(service.harga)}</strong>
-                  <div className="admin-service-card__actions">
-                    <button
-                      className="service-select-button"
-                      type="button"
-                      onClick={() => handleEditService(service)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="service-select-button admin-service-card__delete"
-                      type="button"
-                      onClick={() => void handleDeleteService(service.id)}
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </article>
+          <div className="admin-table-wrap">
+            <table className="admin-data-table admin-service-table">
+              <thead>
+                <tr>
+                  <th>Layanan</th>
+                  <th>Deskripsi</th>
+                  <th>Harga</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {services.map((service) => (
+                  <tr key={service.id}>
+                    <td>
+                      <strong>{service.namaLayanan}</strong>
+                    </td>
+                    <td>
+                      <span className="admin-service-description">{service.deskripsi}</span>
+                    </td>
+                    <td>
+                      <strong>{formatRupiah(service.harga)}</strong>
+                    </td>
+                    <td>
+                      <div className="admin-service-table-actions">
+                        <button
+                          className="service-select-button"
+                          type="button"
+                          onClick={() => handleEditService(service)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="service-select-button admin-service-card__delete"
+                          type="button"
+                          onClick={() => void handleDeleteService(service.id)}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
     </div>

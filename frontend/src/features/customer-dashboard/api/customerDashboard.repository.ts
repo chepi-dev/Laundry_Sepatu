@@ -8,8 +8,8 @@ import { getServices } from '../../services/api/services.api'
 // Customer dashboard sekarang mengambil:
 // - user dari endpoint auth `/me`
 // - order dari endpoint customer `/orders`
-// - service masih dari mock sementara sampai endpoint layanan disambungkan
-// - payment masih dari storage lokal sementara sampai endpoint pembayaran disambungkan
+// - service dari endpoint `/layanan`
+// - payment dari endpoint `/orders/{orderId}/pembayaran`
 export async function getCustomerDashboardData(): Promise<CustomerDashboardData> {
   const [user, orders, services] = await Promise.all([
     getCurrentUser(),

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
@@ -6,16 +6,109 @@ import { getAdminDashboardData } from './api/adminDashboard.repository'
 import type { AdminDashboardData } from '../../types/domain'
 
 export function AdminDashboardPage() {
-  const [adminData] = useState<AdminDashboardData>(() => getAdminDashboardData())
-  const { admin, orders, payments } = adminData
+  const [adminData, setAdminData] = useState<AdminDashboardData | null>(null)
+  const [loadErrorMessage, setLoadErrorMessage] = useState('')
+
+  useEffect(() => {
+    let isMounted = true
+
+    getAdminDashboardData()
+      .then((response) => {
+        if (isMounted) {
+          setAdminData(response)
+        }
+      })
+      .catch((error) => {
+        if (isMounted) {
+          const message =
+            error instanceof Error ? error.message : 'Gagal memuat dashboard admin.'
+          setLoadErrorMessage(message)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  if (loadErrorMessage) {
+    return <div className="dashboard-page service-page--state">{loadErrorMessage}</div>
+  }
+
+  if (!adminData) {
+    return <div className="dashboard-page service-page--state">Memuat dashboard admin...</div>
+  }
+
+  const { admin, customers, orders, payments, services } = adminData
 
   const activeOrders = orders.filter((order) => order.status !== 'Selesai')
+  const completedOrders = orders.filter((order) => order.status === 'Selesai')
   const pendingPayments = payments.filter(
     (payment) => payment.status === 'Menunggu Verifikasi',
   )
   const totalRevenue = payments
     .filter((payment) => payment.status === 'Lunas')
     .reduce((total, payment) => total + payment.jumlahBayar, 0)
+  const overviewMetrics = [
+    {
+      label: 'Order Aktif',
+      value: activeOrders.length,
+    },
+    {
+      label: 'Order Selesai',
+      value: completedOrders.length,
+    },
+    {
+      label: 'Verifikasi',
+      value: pendingPayments.length,
+    },
+    {
+      label: 'Pendapatan',
+      value: formatRupiah(totalRevenue),
+    },
+    {
+      label: 'Layanan',
+      value: services.length,
+    },
+  ]
+  const adminSections = [
+    {
+      title: 'Order Masuk',
+      description: 'Antrian pengerjaan customer.',
+      status: `${activeOrders.length} aktif`,
+      href: '#/dashboard/admin/orders',
+    },
+    {
+      title: 'Order Selesai',
+      description: 'Riwayat order yang sudah selesai.',
+      status: `${completedOrders.length} selesai`,
+      href: '#/dashboard/admin/orders/completed',
+    },
+    {
+      title: 'Verifikasi Pembayaran',
+      description: 'Bukti transfer menunggu review.',
+      status: `${pendingPayments.length} pending`,
+      href: '#/dashboard/admin/payments',
+    },
+    {
+      title: 'Kelola Layanan',
+      description: 'Tambah, edit, dan hapus layanan.',
+      status: `${services.length} layanan`,
+      href: '#/dashboard/admin/services',
+    },
+    {
+      title: 'Datang Langsung',
+      description: 'Input order cash di toko.',
+      status: 'Cash',
+      href: '#/dashboard/admin/walk-in',
+    },
+    {
+      title: 'Pelanggan',
+      description: 'Data customer terdaftar.',
+      status: `${customers.length} customer`,
+      href: '#/dashboard/admin/customers',
+    },
+  ]
 
   return (
     <div className="dashboard-page admin-dashboard-page">
@@ -37,6 +130,7 @@ export function AdminDashboardPage() {
             Ringkasan
           </a>
           <a href="#/dashboard/admin/orders">Order Masuk</a>
+          <a href="#/dashboard/admin/orders/completed">Order Selesai</a>
           <a href="#/dashboard/admin/payments">Verifikasi</a>
           <a href="#/dashboard/admin/services">Layanan</a>
           <a href="#/dashboard/admin/walk-in">Datang Langsung</a>
@@ -53,14 +147,12 @@ export function AdminDashboardPage() {
         </div>
       </header>
 
-      <main className="dashboard-content">
+      <main className="dashboard-content admin-overview-content">
         <section className="dashboard-hero admin-dashboard-hero admin-overview-hero admin-compact-hero">
           <div>
             <p className="section-kicker">Dashboard Admin</p>
             <p>
-              Halaman ringkasan ini difokuskan untuk melihat kondisi operasional utama,
-              lalu admin bisa masuk ke halaman khusus untuk order, verifikasi, layanan,
-              pelanggan, dan transaksi datang langsung.
+              Pantau operasional utama dan buka halaman kerja dari daftar ringkas.
             </p>
           </div>
 
@@ -74,53 +166,53 @@ export function AdminDashboardPage() {
           </div>
         </section>
 
-        <section className="dashboard-stats">
-          <article className="dashboard-stat-card">
-            <span>Order Aktif</span>
-            <strong>{activeOrders.length}</strong>
-            <p>Total order yang masih berjalan dan perlu dipantau admin.</p>
-          </article>
-          <article className="dashboard-stat-card">
-            <span>Pembayaran Pending</span>
-            <strong>{pendingPayments.length}</strong>
-            <p>Jumlah bukti transfer yang menunggu proses verifikasi.</p>
-          </article>
-          <article className="dashboard-stat-card">
-            <span>Pendapatan Masuk</span>
-            <strong>{formatRupiah(totalRevenue)}</strong>
-            <p>Akumulasi pembayaran yang sudah berhasil terverifikasi.</p>
-          </article>
-        </section>
+        <section className="dashboard-panel admin-overview-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <p className="section-kicker">Ringkasan Operasional</p>
+              <h2>Kontrol Admin</h2>
+            </div>
+          </div>
 
-        <section className="dashboard-services-grid">
-          <article className="dashboard-service-card admin-summary-card">
-            <h3>Order Masuk</h3>
-            <p>Kelola seluruh antrian pengerjaan dalam halaman khusus.</p>
-            <ActionButton href="#/dashboard/admin/orders" variant="light" small>
-              Buka Halaman
-            </ActionButton>
-          </article>
-          <article className="dashboard-service-card admin-summary-card">
-            <h3>Verifikasi Pembayaran</h3>
-            <p>Tinjau bukti transfer customer tanpa bercampur dengan panel lain.</p>
-            <ActionButton href="#/dashboard/admin/payments" variant="light" small>
-              Buka Halaman
-            </ActionButton>
-          </article>
-          <article className="dashboard-service-card admin-summary-card">
-            <h3>Kelola Layanan</h3>
-            <p>Tambah, edit, dan hapus layanan pada halaman terpisah.</p>
-            <ActionButton href="#/dashboard/admin/services" variant="light" small>
-              Buka Halaman
-            </ActionButton>
-          </article>
-          <article className="dashboard-service-card admin-summary-card">
-            <h3>Datang Langsung</h3>
-            <p>Input pelanggan toko tanpa memenuhi dashboard utama.</p>
-            <ActionButton href="#/dashboard/admin/walk-in" variant="light" small>
-              Buka Halaman
-            </ActionButton>
-          </article>
+          <div className="admin-overview-metrics">
+            {overviewMetrics.map((metric) => (
+              <div key={metric.label}>
+                <span>{metric.label}</span>
+                <strong>{metric.value}</strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="admin-table-wrap">
+            <table className="admin-data-table admin-overview-table">
+              <thead>
+                <tr>
+                  <th>Area Kerja</th>
+                  <th>Fokus</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminSections.map((section) => (
+                  <tr key={section.title}>
+                    <td>
+                      <strong>{section.title}</strong>
+                    </td>
+                    <td>{section.description}</td>
+                    <td>
+                      <span className="admin-overview-status">{section.status}</span>
+                    </td>
+                    <td>
+                      <a className="admin-overview-action" href={section.href}>
+                        Buka
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       </main>
     </div>
