@@ -1,6 +1,7 @@
 import { getAuthModeFromHash, getOtpFlowFromHash } from './features/auth/lib/auth'
 import { AuthPage } from './features/auth/AuthPage'
 import { AdminCustomersPage } from './features/admin-dashboard/AdminCustomersPage'
+import { AdminCompletedOrdersPage } from './features/admin-dashboard/AdminCompletedOrdersPage'
 import { AdminDashboardPage } from './features/admin-dashboard/AdminDashboardPage'
 import { AdminOrdersPage } from './features/admin-dashboard/AdminOrdersPage'
 import { AdminPaymentsPage } from './features/admin-dashboard/AdminPaymentsPage'
@@ -78,6 +79,14 @@ function App() {
     }
 
     return <AdminOrdersPage />
+  }
+
+  if (dashboardMode === 'admin-completed-orders') {
+    if (!getAuthToken() || !hasRoleAccess('admin')) {
+      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+    }
+
+    return <AdminCompletedOrdersPage />
   }
 
   if (dashboardMode === 'admin-payments') {

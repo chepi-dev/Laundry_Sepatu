@@ -4,7 +4,7 @@ export function getApiBaseUrl() {
   return import.meta.env.VITE_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL
 }
 
-type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 type PrimitiveValue = string | number | boolean | null | undefined
 type RequestPayload =
@@ -58,7 +58,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
     requestUrl = `${requestUrl}?${query.toString()}`
   }
 
-  if ((method === 'POST' || method === 'PUT') && payload) {
+  if ((method === 'POST' || method === 'PUT' || method === 'PATCH') && payload) {
     headers.set('Content-Type', 'application/json')
     requestInit.body = JSON.stringify(payload)
   }

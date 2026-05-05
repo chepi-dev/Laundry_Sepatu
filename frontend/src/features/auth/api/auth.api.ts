@@ -3,6 +3,7 @@ import {
   clearAuthToken,
   getAuthToken,
   setAuthToken,
+  setSessionUser,
 } from '../lib/session'
 import { authRequest } from './auth.client'
 import type {
@@ -12,8 +13,17 @@ import type {
   OtpResponse,
   RegisterPayload,
   SendOtpPayload,
+  UpdateProfilePayload,
   VerifyOtpPayload,
 } from './auth.types'
+
+type UpdateProfileResponse =
+  | AuthApiUser
+  | {
+      data?: AuthApiUser
+      user?: AuthApiUser
+      message?: string
+    }
 
 function mapAuthUserToDomain(user: AuthApiUser): User {
   return {
@@ -21,13 +31,25 @@ function mapAuthUserToDomain(user: AuthApiUser): User {
     name: user.name,
     email: user.email,
     role: user.role,
-    noHp: user.no_hp,
-    alamat: user.alamat,
+    noHp: user.no_hp ?? '',
+    alamat: user.alamat ?? '',
   }
 }
 
 function getResponseToken(payload: AuthResponse) {
   return payload.access_token ?? null
+}
+
+function getProfileResponseUser(payload: UpdateProfileResponse) {
+  if ('data' in payload && payload.data) {
+    return payload.data
+  }
+
+  if ('user' in payload && payload.user) {
+    return payload.user
+  }
+
+  return payload as AuthApiUser
 }
 
 export async function login(payload: LoginPayload) {
@@ -109,6 +131,26 @@ export async function getCurrentUser() {
   })
 
   return mapAuthUserToDomain(response)
+}
+
+export async function updateCurrentUserProfile(payload: UpdateProfilePayload) {
+  const token = getAuthToken()
+
+  if (!token) {
+    throw new Error('Sesi login tidak ditemukan.')
+  }
+
+  const response = await authRequest<UpdateProfileResponse>('/profile', {
+    method: 'PATCH',
+    token,
+    payload,
+  })
+
+  const user = mapAuthUserToDomain(getProfileResponseUser(response))
+
+  setSessionUser(user)
+
+  return user
 }
 
 export async function logout() {

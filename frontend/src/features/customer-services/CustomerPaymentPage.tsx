@@ -9,15 +9,12 @@ import {
   getCustomerPaymentDraft,
 } from './lib/customerOrderFlow'
 import { CustomerNavbar } from './components/CustomerNavbar'
-import type { Order, Payment, Service, User } from '../../types/domain'
+import type { User } from '../../types/domain'
 
 const BANK_ACCOUNT_NAME = 'BCA a.n. Shoes and Care'
 const BANK_ACCOUNT_NUMBER = '1234567890'
 
 export function CustomerPaymentPage() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [services, setServices] = useState<Service[]>([])
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadErrorMessage, setLoadErrorMessage] = useState('')
@@ -38,9 +35,6 @@ export function CustomerPaymentPage() {
           return
         }
 
-        setServices(response.services)
-        setOrders(response.orders)
-        setPayments(response.payments)
         setUser(response.user)
       })
       .catch((error) => {
@@ -63,24 +57,6 @@ export function CustomerPaymentPage() {
     }
   }, [])
 
-  const orderDetails = orders.map((order) => {
-    const payment = payments.find((item) => item.orderId === order.id)
-
-    return {
-      ...order,
-      payment,
-      detailItems: order.details.map((detail) => ({
-        ...detail,
-        serviceName:
-          detail.layananNama ??
-          services.find((service) => service.id === detail.layananId)?.namaLayanan ??
-          (draft && draft.service.id === detail.layananId
-            ? draft.service.namaLayanan
-            : `Layanan #${detail.layananId}`),
-      })),
-    }
-  })
-
   if (isLoading) {
     return <div className="service-page service-page--state">Memuat pembayaran...</div>
   }
@@ -92,7 +68,9 @@ export function CustomerPaymentPage() {
   if (!draft) {
     return (
       <div className="service-page">
-        {user ? <CustomerNavbar user={user} activePage="payment" /> : null}
+        {user ? (
+          <CustomerNavbar user={user} activePage="payment" onUserUpdated={setUser} />
+        ) : null}
         <main className="service-page--state">
           Data pembayaran belum tersedia. Silakan isi form layanan terlebih dahulu.
         </main>
@@ -139,19 +117,11 @@ export function CustomerPaymentPage() {
         ],
       })
 
-      const createdPayment = await createPaymentByOrderId(createdOrder.id, {
+      await createPaymentByOrderId(createdOrder.id, {
         metode_pembayaran: 'Transfer Bank',
       })
 
       clearCustomerPaymentDraft()
-      setOrders((currentOrders) => [createdOrder, ...currentOrders])
-      setPayments((currentPayments) => [
-        {
-          ...createdPayment,
-          buktiPembayaran: paymentProofName,
-        },
-        ...currentPayments,
-      ])
       setPaymentProofName('')
       setPaymentProofPreview('')
       setErrorMessage('')
@@ -167,7 +137,11 @@ export function CustomerPaymentPage() {
 
   return (
     <div className="service-page">
-      <CustomerNavbar user={draft.user} activePage="payment" />
+      <CustomerNavbar
+        user={user ?? draft.user}
+        activePage="payment"
+        onUserUpdated={setUser}
+      />
 
       <main className="service-main container">
         <section className="service-hero">
@@ -248,67 +222,6 @@ export function CustomerPaymentPage() {
               </ActionButton>
             </div>
           </article>
-        </section>
-
-        <section className="service-catalog">
-          <div className="dashboard-panel__header">
-            <div>
-              <p className="section-kicker">Detail Order</p>
-              <h2>Hasil Pesanan Setelah Pembayaran</h2>
-            </div>
-          </div>
-
-          <div className="service-order-list">
-            {orderDetails.map((order) => (
-              <article key={order.id} className="service-order-card">
-                <div className="service-order-card__header">
-                  <div>
-                    <p className="section-kicker">Order {order.kodeOrder}</p>
-                    <h3>Pesanan Customer</h3>
-                  </div>
-                  <span className={`status-pill status-pill--${order.status.toLowerCase()}`}>
-                    {order.status}
-                  </span>
-                </div>
-
-                <div className="service-order-card__grid">
-                  <div>
-                    <span>Total Bayar</span>
-                    <strong>{formatRupiah(order.totalHarga)}</strong>
-                  </div>
-                  <div>
-                    <span>Layanan</span>
-                    <strong>{order.detailItems.length} item</strong>
-                  </div>
-                  <div>
-                    <span>Status Bayar</span>
-                    <strong>{order.payment?.status ?? 'Menunggu data pembayaran'}</strong>
-                  </div>
-                </div>
-
-                <div className="service-order-card__items">
-                  {order.detailItems.map((detail) => (
-                    <div key={detail.id} className="service-order-item">
-                      <div>
-                        <span>{detail.serviceName}</span>
-                        <strong>{detail.qty} item</strong>
-                      </div>
-                      <strong>{formatRupiah(detail.subtotal)}</strong>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="service-order-card__summary">
-                  <p>{order.catatan}</p>
-                  <div className="service-summary-card__meta">
-                    <span>{order.tanggalOrder}</span>
-                    <span>{order.estimasiSelesai}</span>
-                    <span>{order.alamatPickup}</span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
         </section>
       </main>
     </div>

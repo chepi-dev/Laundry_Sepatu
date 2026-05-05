@@ -52,10 +52,20 @@ export function CustomerDashboardPage() {
   }
 
   const { user } = dashboardData
+  const handleUserUpdated = (updatedUser: typeof user) => {
+    setDashboardData((currentData) =>
+      currentData
+        ? {
+            ...currentData,
+            user: updatedUser,
+          }
+        : currentData,
+    )
+  }
 
   return (
     <div className="dashboard-page">
-      <CustomerNavbar user={user} activePage="dashboard" />
+      <CustomerNavbar user={user} activePage="dashboard" onUserUpdated={handleUserUpdated} />
 
       <main className="dashboard-content" id="dashboard-top">
         <section className="dashboard-hero">

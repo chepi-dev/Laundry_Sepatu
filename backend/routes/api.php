@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AdminCustomerController;
 use App\Http\Controllers\Api\AdminOrderController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\AuthController;
@@ -8,7 +9,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\PembayaranController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\OtpController;
-
+use App\Http\Controllers\Api\ProfileController;
 
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
@@ -49,10 +50,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
+
+
+    Route::patch('/profile', [ProfileController::class, 'update']);
+
 });
 
 //Admin
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/orders', [AdminOrderController::class, 'index']);
     Route::patch('/admin/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+
+    Route::get('/admin/customers', [AdminCustomerController::class, 'index']);
+
 });

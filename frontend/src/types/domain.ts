@@ -26,7 +26,14 @@ export type OrderDetail = {
   layananNama?: string
 }
 
-export type OrderStatus = 'Pending' | 'Diproses' | 'Pickup' | 'Dicuci' | 'Selesai'
+export type OrderStatus =
+  | 'Pending'
+  | 'Diproses'
+  | 'Pickup'
+  | 'Dicuci'
+  | 'Selesai'
+  | 'Diambil'
+  | 'Dibatalkan'
 
 export type Order = {
   id: number

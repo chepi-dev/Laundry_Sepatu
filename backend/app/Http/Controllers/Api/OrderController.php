@@ -64,7 +64,7 @@ class OrderController extends Controller
                 'status' => 'pending',
                 'total_harga' => 0,
                 'alamat_pickup' => $validated['alamat_pickup'],
-                'catatan' => $validated['catatan'] ?? null,
+                'catatan' => $validated['catatan'] ?? '',
                 'estimasi_selesai' => $validated['estimasi_selesai'] ?? null,
             ]);
 
