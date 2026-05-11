@@ -3,11 +3,8 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
 import { createCustomerOrder } from '../customer-dashboard/api/orders.api'
 import { createPaymentByOrderId } from '../customer-dashboard/api/payments.api'
-import { getCustomerServicesData } from './api/customerServices.repository'
-import {
-  clearCustomerPaymentDraft,
-  getCustomerPaymentDraft,
-} from './lib/customerOrderFlow'
+import { getCurrentUser } from '../auth/api/auth.api'
+import { getCustomerPaymentDraft, clearCustomerPaymentDraft } from './lib/customerOrderFlow'
 import { CustomerNavbar } from './components/CustomerNavbar'
 import type { User } from '../../types/domain'
 
@@ -15,27 +12,31 @@ const BANK_ACCOUNT_NAME = 'BCA a.n. Shoes and Care'
 const BANK_ACCOUNT_NUMBER = '1234567890'
 
 export function CustomerPaymentPage() {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const draft = getCustomerPaymentDraft()
+  const [user, setUser] = useState<User | null>(draft?.user ?? null)
+  const [isLoading, setIsLoading] = useState(draft?.user ? false : true)
   const [loadErrorMessage, setLoadErrorMessage] = useState('')
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null)
   const [paymentProofName, setPaymentProofName] = useState('')
   const [paymentProofPreview, setPaymentProofPreview] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
 
-  const draft = getCustomerPaymentDraft()
-
   useEffect(() => {
+    if (draft?.user) {
+      return
+    }
+
     let isMounted = true
 
-    getCustomerServicesData()
+    getCurrentUser()
       .then((response) => {
         if (!isMounted) {
           return
         }
 
-        setUser(response.user)
+        setUser(response)
       })
       .catch((error) => {
         if (!isMounted) {
@@ -55,7 +56,7 @@ export function CustomerPaymentPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [draft?.user])
 
   if (isLoading) {
     return <div className="service-page service-page--state">Memuat pembayaran...</div>
@@ -82,11 +83,13 @@ export function CustomerPaymentPage() {
     const file = event.target.files?.[0]
 
     if (!file) {
+      setPaymentProofFile(null)
       setPaymentProofName('')
       setPaymentProofPreview('')
       return
     }
 
+    setPaymentProofFile(file)
     setPaymentProofName(file.name)
     setErrorMessage('')
 
@@ -98,7 +101,7 @@ export function CustomerPaymentPage() {
   }
 
   const handleConfirmPayment = async () => {
-    if (!paymentProofName.trim()) {
+    if (!paymentProofFile) {
       setErrorMessage('Isi bukti pembayaran agar order bisa diproses.')
       return
     }
@@ -119,9 +122,11 @@ export function CustomerPaymentPage() {
 
       await createPaymentByOrderId(createdOrder.id, {
         metode_pembayaran: 'Transfer Bank',
+        bukti_pembayaran: paymentProofFile,
       })
 
       clearCustomerPaymentDraft()
+      setPaymentProofFile(null)
       setPaymentProofName('')
       setPaymentProofPreview('')
       setErrorMessage('')

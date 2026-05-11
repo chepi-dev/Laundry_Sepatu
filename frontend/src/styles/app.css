@@ -2954,6 +2954,33 @@ button {
   gap: 6px;
 }
 
+.admin-walkin-customer-tools {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #d7eefb;
+}
+
+.admin-walkin-mode-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-walkin-mode-buttons .service-select-button.is-selected {
+  border-color: #0d4f88;
+  background: #0d4f88;
+  color: #ffffff;
+}
+
+.admin-walkin-customer-picker {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr);
+  gap: 10px;
+}
+
 .admin-walkin-form select,
 .admin-walkin-form input {
   padding: 10px 12px;
@@ -3284,6 +3311,7 @@ button {
   }
 
   .admin-walkin-form,
+  .admin-walkin-customer-picker,
   .admin-walkin-checkout {
     grid-template-columns: 1fr;
   }

@@ -1,15 +1,15 @@
 import { apiRequest } from '../../../lib/apiClient'
-import type { AdminDashboardData, User } from '../../../types/domain'
+import type { AdminDashboardData, Payment, PaymentStatus, User } from '../../../types/domain'
 import { getCurrentUser } from '../../auth/api/auth.api'
 import type { AuthApiUser } from '../../auth/api/auth.types'
 import { getAuthToken } from '../../auth/lib/session'
 import { mapOrder } from '../../customer-dashboard/api/orders.api'
 import type { ApiOrder } from '../../customer-dashboard/api/orders.types'
-import { getPaymentByOrderId } from '../../customer-dashboard/api/payments.api'
 import { getServices } from '../../services/api/services.api'
 
 type ApiAdminOrder = ApiOrder & {
   user?: AuthApiUser | null
+  pembayaran?: ApiAdminPayment | null
 }
 
 type AdminOrderListResponse = {
@@ -20,6 +20,17 @@ type AdminOrderListResponse = {
 type AdminCustomerListResponse = {
   data: AuthApiUser[]
   message?: string
+}
+
+type ApiAdminPayment = {
+  id: number
+  order_id: number
+  metode_pembayaran: string
+  status: string
+  jumlah_bayar: number
+  tanggal_bayar?: string | null
+  bukti_pembayaran?: string | null
+  bukti_pembayaran_url?: string | null
 }
 
 type AdminDashboardRequestOptions = {
@@ -54,14 +65,38 @@ function getUniqueCustomers(orders: ApiAdminOrder[]) {
   const customers = new Map<number, User>()
 
   orders.forEach((order) => {
-    if (!order.user || order.user.role !== 'customer') {
-      return
+    if (order.user) {
+      customers.set(order.user.id, mapApiUser(order.user))
     }
-
-    customers.set(order.user.id, mapApiUser(order.user))
   })
 
   return Array.from(customers.values())
+}
+
+function mapPaymentStatus(status: string): PaymentStatus {
+  switch (status.toLowerCase()) {
+    case 'lunas':
+      return 'Lunas'
+    case 'gagal':
+      return 'Gagal'
+    case 'pending':
+    default:
+      return 'Menunggu Verifikasi'
+  }
+}
+
+function mapAdminPayment(payment: ApiAdminPayment): Payment {
+  return {
+    id: payment.id,
+    orderId: payment.order_id,
+    metodePembayaran: payment.metode_pembayaran,
+    status: mapPaymentStatus(payment.status),
+    jumlahBayar: payment.jumlah_bayar,
+    tanggalBayar: payment.tanggal_bayar ?? '',
+    rekeningTujuan: '1234567890',
+    namaBank: 'BCA a.n. Shoes and Care',
+    buktiPembayaran: payment.bukti_pembayaran_url ?? payment.bukti_pembayaran ?? '',
+  }
 }
 
 async function getAdminOrders() {
@@ -71,6 +106,13 @@ async function getAdminOrders() {
   })
 
   return response.data
+}
+
+function getAdminPaymentsFromOrders(orders: ApiAdminOrder[]) {
+  return orders
+    .map((order) => order.pembayaran)
+    .filter((payment): payment is ApiAdminPayment => Boolean(payment))
+    .map(mapAdminPayment)
 }
 
 export async function getAdminCustomers() {
@@ -87,7 +129,7 @@ export async function getAdminDashboardData(
 ): Promise<AdminDashboardData> {
   const includeCustomers = options.includeCustomers ?? true
   const includeOrders = options.includeOrders ?? true
-  const includePayments = options.includePayments ?? true
+  const includePayments = options.includePayments ?? false // Default false untuk dashboard utama
   const includeServices = options.includeServices ?? true
   const [admin, services, adminOrders, customers] = await Promise.all([
     getCurrentUser(),
@@ -96,7 +138,7 @@ export async function getAdminDashboardData(
     includeCustomers ? getAdminCustomers() : Promise.resolve([]),
   ])
   const payments = includePayments && includeOrders
-    ? await Promise.all(adminOrders.map((order) => getPaymentByOrderId(order.id)))
+    ? getAdminPaymentsFromOrders(adminOrders)
     : []
 
   return {
@@ -104,7 +146,7 @@ export async function getAdminDashboardData(
     services,
     customers: includeCustomers ? customers : getUniqueCustomers(adminOrders),
     orders: adminOrders.map(mapOrder),
-    payments: payments.filter((payment) => payment !== null),
+    payments,
   }
 }
 

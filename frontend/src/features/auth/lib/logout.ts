@@ -1,4 +1,5 @@
-import { logout } from '../api/auth.api'
+import { logout, clearCurrentUserCache } from '../api/auth.api'
+import { clearServicesCache } from '../../services/api/services.api'
 import { clearSessionUser } from './session'
 
 export async function performLogout() {
@@ -9,5 +10,7 @@ export async function performLogout() {
   }
 
   clearSessionUser()
+  clearCurrentUserCache()
+  clearServicesCache()
   window.location.hash = '#/auth/login'
 }

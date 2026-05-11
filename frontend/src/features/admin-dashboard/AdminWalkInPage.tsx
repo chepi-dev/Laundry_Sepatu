@@ -5,11 +5,16 @@ import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
 import { getCurrentUser } from '../auth/api/auth.api'
 import { getServices } from '../services/api/services.api'
+import { getAdminCustomers } from './api/adminDashboard.repository'
 import type { Service, User } from '../../types/domain'
 
 export function AdminWalkInPage() {
   const [admin, setAdmin] = useState<User | null>(null)
   const [services, setServices] = useState<Service[]>([])
+  const [customers, setCustomers] = useState<User[]>([])
+  const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('existing')
+  const [selectedCustomerId, setSelectedCustomerId] = useState(0)
+  const [customerSearch, setCustomerSearch] = useState('')
   const [walkInName, setWalkInName] = useState('')
   const [walkInEmail, setWalkInEmail] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
@@ -23,15 +28,16 @@ export function AdminWalkInPage() {
   useEffect(() => {
     let isMounted = true
 
-    Promise.all([getCurrentUser(), getServices()])
-      .then(([currentAdmin, response]) => {
+    Promise.all([getCurrentUser(), getServices(), getAdminCustomers()])
+      .then(([currentAdmin, serviceData, customerData]) => {
         if (!isMounted) {
           return
         }
 
         setAdmin(currentAdmin)
-        setServices(response)
-        setWalkInServiceId(response[0]?.id ?? 0)
+        setServices(serviceData)
+        setCustomers(customerData)
+        setWalkInServiceId(serviceData[0]?.id ?? 0)
       })
       .catch((error) => {
         if (!isMounted) {
@@ -49,9 +55,64 @@ export function AdminWalkInPage() {
 
   const selectedWalkInService =
     services.find((service) => service.id === walkInServiceId) ?? services[0]
+  const selectedCustomer =
+    customers.find((customer) => customer.id === selectedCustomerId) ?? null
   const walkInTotal = (selectedWalkInService?.harga ?? 0) * walkInQty
+  const filteredCustomers = customers.filter((customer) => {
+    const searchValue = customerSearch.trim().toLowerCase()
+
+    if (!searchValue) {
+      return true
+    }
+
+    return [customer.name, customer.email, customer.noHp, customer.alamat]
+      .join(' ')
+      .toLowerCase()
+      .includes(searchValue)
+  })
+
+  const fillCustomerFields = (customer: User) => {
+    setWalkInName(customer.name)
+    setWalkInEmail(customer.email)
+    setWalkInPhone(customer.noHp)
+    setWalkInAddress(customer.alamat)
+  }
+
+  const handleSelectCustomer = (customerId: number) => {
+    setSelectedCustomerId(customerId)
+    setFormErrorMessage('')
+
+    const customer = customers.find((item) => item.id === customerId)
+
+    if (customer) {
+      fillCustomerFields(customer)
+    }
+  }
+
+  const handleUseExistingCustomer = () => {
+    setCustomerMode('existing')
+    setFormErrorMessage('')
+
+    if (selectedCustomer) {
+      fillCustomerFields(selectedCustomer)
+    }
+  }
+
+  const handleUseNewCustomer = () => {
+    setCustomerMode('new')
+    setSelectedCustomerId(0)
+    setCustomerSearch('')
+    setWalkInName('')
+    setWalkInEmail('')
+    setWalkInPhone('')
+    setWalkInAddress('')
+    setFormErrorMessage('')
+  }
 
   const resetWalkInForm = () => {
+    setCustomerMode('existing')
+    setSelectedCustomerId(0)
+    setCustomerSearch('')
     setWalkInName('')
     setWalkInEmail('')
     setWalkInPhone('')
@@ -66,6 +127,11 @@ export function AdminWalkInPage() {
     const trimmedName = walkInName.trim()
     const trimmedPhone = walkInPhone.trim()
     const trimmedAddress = walkInAddress.trim()
+
+    if (customerMode === 'existing' && !selectedCustomer) {
+      setFormErrorMessage('Pilih customer lama terlebih dahulu atau gunakan tombol Customer Baru.')
+      return
+    }
 
     if (!trimmedName || !trimmedPhone || !trimmedAddress || !selectedWalkInService) {
       setFormErrorMessage('Nama, nomor HP, dan alamat wajib diisi sebelum menyimpan order.')
@@ -155,10 +221,61 @@ export function AdminWalkInPage() {
           {formErrorMessage ? <p className="service-error">{formErrorMessage}</p> : null}
 
           <div className="dashboard-order-form admin-walkin-form">
+            <div className="admin-walkin-customer-tools">
+              <div className="admin-walkin-mode-buttons" aria-label="Mode input customer">
+                <button
+                  className={`service-select-button ${
+                    customerMode === 'existing' ? 'is-selected' : ''
+                  }`}
+                  type="button"
+                  onClick={handleUseExistingCustomer}
+                >
+                  Customer Lama
+                </button>
+                <button
+                  className={`service-select-button ${customerMode === 'new' ? 'is-selected' : ''}`}
+                  type="button"
+                  onClick={handleUseNewCustomer}
+                >
+                  Customer Baru
+                </button>
+              </div>
+
+              {customerMode === 'existing' ? (
+                <div className="admin-walkin-customer-picker">
+                  <label className="form-field" htmlFor="walkin-customer-search">
+                    <span>Cari Customer</span>
+                    <input
+                      id="walkin-customer-search"
+                      placeholder="Cari nama, email, no. HP, atau alamat"
+                      value={customerSearch}
+                      onChange={(event) => setCustomerSearch(event.target.value)}
+                    />
+                  </label>
+                  <label className="form-field" htmlFor="walkin-customer">
+                    <span>Pilih Customer</span>
+                    <select
+                      id="walkin-customer"
+                      value={selectedCustomerId}
+                      onChange={(event) => handleSelectCustomer(Number(event.target.value))}
+                    >
+                      <option value={0}>Pilih dari data customer</option>
+                      {filteredCustomers.map((customer) => (
+                        <option key={customer.id} value={customer.id}>
+                          {customer.name} - {customer.noHp}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              ) : null}
+            </div>
+
             <FormField
               id="walkin-name"
               label="Nama Pelanggan"
               placeholder="Masukkan nama pelanggan"
+              readOnly={customerMode === 'existing' && Boolean(selectedCustomer)}
               value={walkInName}
               onChange={setWalkInName}
             />
@@ -167,6 +284,7 @@ export function AdminWalkInPage() {
               label="No. HP"
               type="tel"
               placeholder="Masukkan nomor handphone"
+              readOnly={customerMode === 'existing' && Boolean(selectedCustomer)}
               value={walkInPhone}
               onChange={setWalkInPhone}
             />
@@ -175,6 +293,7 @@ export function AdminWalkInPage() {
               label="Email"
               type="email"
               placeholder="Opsional"
+              readOnly={customerMode === 'existing' && Boolean(selectedCustomer)}
               value={walkInEmail}
               onChange={setWalkInEmail}
             />

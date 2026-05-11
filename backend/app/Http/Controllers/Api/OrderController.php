@@ -15,10 +15,10 @@ use Illuminate\Support\Str;
 class OrderController extends Controller
 {
     public function index(Request $request){
-        $orders = Order::with('details.layanan')
-        ->where('user_id', $request->user()->id)
-        ->latest()
-        ->get();
+        $orders = $request->user()->orders()
+            ->with('details.layanan')
+            ->latest()
+            ->get();
 
         return response()->json([
             'data' => $orders,
@@ -27,14 +27,13 @@ class OrderController extends Controller
     }
 
     public function show(Request $request, $id){
-        $order = Order::with('details.layanan')
-            ->where('user_id', $request->user()->id)
-            ->where('id', $id)
-            ->first();
+        $order = $request->user()->orders()
+            ->with('details.layanan')
+            ->find($id);
 
         if (!$order) {
             return response()->json([
-                'message' => 'Order tidak ditemukan'
+                'message' => 'Order tidak ditemukan atau bukan milik Anda'
             ], 404);
         }
 

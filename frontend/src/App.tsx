@@ -1,17 +1,5 @@
 import { getAuthModeFromHash, getOtpFlowFromHash } from './features/auth/lib/auth'
-import { AuthPage } from './features/auth/AuthPage'
-import { AdminCustomersPage } from './features/admin-dashboard/AdminCustomersPage'
-import { AdminCompletedOrdersPage } from './features/admin-dashboard/AdminCompletedOrdersPage'
-import { AdminDashboardPage } from './features/admin-dashboard/AdminDashboardPage'
-import { AdminOrdersPage } from './features/admin-dashboard/AdminOrdersPage'
-import { AdminPaymentsPage } from './features/admin-dashboard/AdminPaymentsPage'
-import { AdminServicesPage } from './features/admin-dashboard/AdminServicesPage'
-import { AdminWalkInPage } from './features/admin-dashboard/AdminWalkInPage'
-import { CustomerOrderDetailPage } from './features/customer-services/CustomerOrderDetailPage'
-import { CustomerPaymentPage } from './features/customer-services/CustomerPaymentPage'
-import { CustomerServicesPage } from './features/customer-services/CustomerServicesPage'
 import { getCustomerServicesHash } from './features/customer-services/lib/routes'
-import { CustomerDashboardPage } from './features/customer-dashboard/CustomerDashboardPage'
 import { getDashboardHash } from './features/customer-dashboard/lib/dashboard'
 import { landingContent } from './data/landingContent'
 import { getAuthToken, hasRoleAccess } from './features/auth/lib/session'
@@ -24,7 +12,80 @@ import { ServicesSection } from './sections/ServicesSection'
 import { WorkshopSection } from './sections/WorkshopSection'
 import { GallerySection } from './sections/GallerySection'
 import './styles/app.css'
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+
+const AuthPage = lazy(
+  () =>
+    import('./features/auth/AuthPage').then((module) => ({
+      default: module.AuthPage,
+    })),
+)
+const CustomerDashboardPage = lazy(
+  () =>
+    import('./features/customer-dashboard/CustomerDashboardPage').then((module) => ({
+      default: module.CustomerDashboardPage,
+    })),
+)
+const CustomerOrderDetailPage = lazy(
+  () =>
+    import('./features/customer-services/CustomerOrderDetailPage').then((module) => ({
+      default: module.CustomerOrderDetailPage,
+    })),
+)
+const CustomerPaymentPage = lazy(
+  () =>
+    import('./features/customer-services/CustomerPaymentPage').then((module) => ({
+      default: module.CustomerPaymentPage,
+    })),
+)
+const CustomerServicesPage = lazy(
+  () =>
+    import('./features/customer-services/CustomerServicesPage').then((module) => ({
+      default: module.CustomerServicesPage,
+    })),
+)
+const AdminDashboardPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminDashboardPage').then((module) => ({
+      default: module.AdminDashboardPage,
+    })),
+)
+const AdminOrdersPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminOrdersPage').then((module) => ({
+      default: module.AdminOrdersPage,
+    })),
+)
+const AdminCompletedOrdersPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminCompletedOrdersPage').then((module) => ({
+      default: module.AdminCompletedOrdersPage,
+    })),
+)
+const AdminPaymentsPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminPaymentsPage').then((module) => ({
+      default: module.AdminPaymentsPage,
+    })),
+)
+const AdminServicesPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminServicesPage').then((module) => ({
+      default: module.AdminServicesPage,
+    })),
+)
+const AdminWalkInPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminWalkInPage').then((module) => ({
+      default: module.AdminWalkInPage,
+    })),
+)
+const AdminCustomersPage = lazy(
+  () =>
+    import('./features/admin-dashboard/AdminCustomersPage').then((module) => ({
+      default: module.AdminCustomersPage,
+    })),
+)
 
 function App() {
   const [hash, setHash] = useState(() => window.location.hash)
@@ -32,6 +93,12 @@ function App() {
   const otpFlow = getOtpFlowFromHash(hash)
   const servicesMode = getCustomerServicesHash(hash)
   const dashboardMode = getDashboardHash(hash)
+
+  const renderPage = (page: ReactNode) => (
+    <Suspense fallback={<div className="page-loading">Loading...</div>}>
+      {page}
+    </Suspense>
+  )
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -46,79 +113,79 @@ function App() {
   }, [])
 
   if (authMode) {
-    return <AuthPage mode={authMode} otpFlow={otpFlow} footer={landingContent.footer} />
+    return renderPage(<AuthPage mode={authMode} otpFlow={otpFlow} footer={landingContent.footer} />)
   }
 
   if (servicesMode === 'services') {
-    return <CustomerServicesPage />
+    return renderPage(<CustomerServicesPage />)
   }
 
   if (servicesMode === 'payment') {
-    return <CustomerPaymentPage />
+    return renderPage(<CustomerPaymentPage />)
   }
 
   if (servicesMode === 'orders') {
-    return <CustomerOrderDetailPage />
+    return renderPage(<CustomerOrderDetailPage />)
   }
 
   if (dashboardMode === 'customer') {
-    return <CustomerDashboardPage />
+    return renderPage(<CustomerDashboardPage />)
   }
 
   if (dashboardMode === 'admin') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminDashboardPage />
+    return renderPage(<AdminDashboardPage />)
   }
 
   if (dashboardMode === 'admin-orders') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminOrdersPage />
+    return renderPage(<AdminOrdersPage />)
   }
 
   if (dashboardMode === 'admin-completed-orders') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminCompletedOrdersPage />
+    return renderPage(<AdminCompletedOrdersPage />)
   }
 
   if (dashboardMode === 'admin-payments') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminPaymentsPage />
+    return renderPage(<AdminPaymentsPage />)
   }
 
   if (dashboardMode === 'admin-services') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminServicesPage />
+    return renderPage(<AdminServicesPage />)
   }
 
   if (dashboardMode === 'admin-walkin') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminWalkInPage />
+    return renderPage(<AdminWalkInPage />)
   }
 
   if (dashboardMode === 'admin-customers') {
     if (!getAuthToken() || !hasRoleAccess('admin')) {
-      return <AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />
+      return renderPage(<AuthPage mode="login" otpFlow={null} footer={landingContent.footer} />)
     }
 
-    return <AdminCustomersPage />
+    return renderPage(<AdminCustomersPage />)
   }
 
   return (

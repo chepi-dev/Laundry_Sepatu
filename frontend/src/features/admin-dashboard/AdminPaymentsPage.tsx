@@ -3,7 +3,19 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
 import { getAdminDashboardData, verifyAdminPayment } from './api/adminDashboard.repository'
-import type { AdminDashboardData } from '../../types/domain'
+import type { AdminDashboardData, Order, User } from '../../types/domain'
+
+function getOrderForPayment(orders: Order[], orderId: number) {
+  return orders.find((order) => order.id === orderId) ?? null
+}
+
+function getCustomerForOrder(customers: User[], order: Order | null) {
+  if (!order) {
+    return null
+  }
+
+  return customers.find((customer) => customer.id === order.userId) ?? null
+}
 
 export function AdminPaymentsPage() {
   const [adminData, setAdminData] = useState<AdminDashboardData | null>(null)
@@ -12,7 +24,11 @@ export function AdminPaymentsPage() {
   useEffect(() => {
     let isMounted = true
 
-    getAdminDashboardData({ includeCustomers: false, includeServices: false })
+    getAdminDashboardData({
+      includeCustomers: false,
+      includePayments: true,
+      includeServices: false,
+    })
       .then((response) => {
         if (isMounted) {
           setAdminData(response)
@@ -48,6 +64,7 @@ export function AdminPaymentsPage() {
       setAdminData(
         await verifyAdminPayment(orderId, {
           includeCustomers: false,
+          includePayments: true,
           includeServices: false,
         }),
       )
@@ -129,6 +146,7 @@ export function AdminPaymentsPage() {
               <thead>
                 <tr>
                   <th>Order</th>
+                  <th>Customer</th>
                   <th>Status</th>
                   <th>Metode</th>
                   <th>Total Bayar</th>
@@ -137,44 +155,65 @@ export function AdminPaymentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {adminData.payments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td>
-                      <strong className="admin-payment-order">#{payment.orderId}</strong>
-                    </td>
-                    <td>
-                      <span
-                        className={`status-pill status-pill--${payment.status
-                          .toLowerCase()
-                          .replaceAll(' ', '-')}`}
-                      >
-                        {payment.status}
-                      </span>
-                    </td>
-                    <td>{payment.metodePembayaran}</td>
-                    <td>
-                      <strong>{formatRupiah(payment.jumlahBayar)}</strong>
-                    </td>
-                    <td>
-                      <span className="admin-payment-proof">
-                        {payment.buktiPembayaran || 'Belum ada file'}
-                      </span>
-                    </td>
-                    <td>
-                      {payment.status === 'Menunggu Verifikasi' ? (
-                        <button
-                          className="admin-payment-action"
-                          type="button"
-                          onClick={() => void handleVerifyPayment(payment.orderId)}
+                {adminData.payments.map((payment) => {
+                  const order = getOrderForPayment(adminData.orders, payment.orderId)
+                  const customer = getCustomerForOrder(adminData.customers, order)
+
+                  return (
+                    <tr key={payment.id}>
+                      <td>
+                        <strong className="admin-payment-order">#{payment.orderId}</strong>
+                      </td>
+                      <td>
+                        <strong>{customer?.name ?? 'Pelanggan'}</strong>
+                        <br />
+                        <span className="admin-payment-proof">
+                          {customer?.noHp ?? 'No. HP tidak tersedia'}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`status-pill status-pill--${payment.status
+                            .toLowerCase()
+                            .replaceAll(' ', '-')}`}
                         >
-                          Verifikasi
-                        </button>
-                      ) : (
-                        <span className="admin-payment-done">Selesai</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                          {payment.status}
+                        </span>
+                      </td>
+                      <td>{payment.metodePembayaran}</td>
+                      <td>
+                        <strong>{formatRupiah(payment.jumlahBayar)}</strong>
+                      </td>
+                      <td>
+                        {payment.buktiPembayaran ? (
+                          <a
+                            className="admin-payment-proof"
+                            href={payment.buktiPembayaran}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Lihat Bukti
+                          </a>
+                        ) : (
+                          <span className="admin-payment-proof">Belum ada file</span>
+                        )}
+                      </td>
+                      <td>
+                        {payment.status === 'Menunggu Verifikasi' ? (
+                          <button
+                            className="admin-payment-action"
+                            type="button"
+                            onClick={() => void handleVerifyPayment(payment.orderId)}
+                          >
+                            Verifikasi
+                          </button>
+                        ) : (
+                          <span className="admin-payment-done">Selesai</span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

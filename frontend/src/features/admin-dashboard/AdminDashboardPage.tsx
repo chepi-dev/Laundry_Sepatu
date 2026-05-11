@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
-import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
 import { getAdminDashboardData } from './api/adminDashboard.repository'
 import type { AdminDashboardData } from '../../types/domain'
@@ -12,7 +11,7 @@ export function AdminDashboardPage() {
   useEffect(() => {
     let isMounted = true
 
-    getAdminDashboardData()
+    getAdminDashboardData({ includePayments: false })
       .then((response) => {
         if (isMounted) {
           setAdminData(response)
@@ -39,16 +38,10 @@ export function AdminDashboardPage() {
     return <div className="dashboard-page service-page--state">Memuat dashboard admin...</div>
   }
 
-  const { admin, customers, orders, payments, services } = adminData
+  const { admin, customers, orders, services } = adminData
 
   const activeOrders = orders.filter((order) => order.status !== 'Selesai')
   const completedOrders = orders.filter((order) => order.status === 'Selesai')
-  const pendingPayments = payments.filter(
-    (payment) => payment.status === 'Menunggu Verifikasi',
-  )
-  const totalRevenue = payments
-    .filter((payment) => payment.status === 'Lunas')
-    .reduce((total, payment) => total + payment.jumlahBayar, 0)
   const overviewMetrics = [
     {
       label: 'Order Aktif',
@@ -57,14 +50,6 @@ export function AdminDashboardPage() {
     {
       label: 'Order Selesai',
       value: completedOrders.length,
-    },
-    {
-      label: 'Verifikasi',
-      value: pendingPayments.length,
-    },
-    {
-      label: 'Pendapatan',
-      value: formatRupiah(totalRevenue),
     },
     {
       label: 'Layanan',
@@ -87,7 +72,7 @@ export function AdminDashboardPage() {
     {
       title: 'Verifikasi Pembayaran',
       description: 'Bukti transfer menunggu review.',
-      status: `${pendingPayments.length} pending`,
+      status: 'Buka halaman',
       href: '#/dashboard/admin/payments',
     },
     {

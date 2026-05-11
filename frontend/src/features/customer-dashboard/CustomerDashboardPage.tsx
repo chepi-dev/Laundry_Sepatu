@@ -11,7 +11,7 @@ export function CustomerDashboardPage() {
   useEffect(() => {
     let isMounted = true
 
-    getCustomerDashboardData()
+    getCustomerDashboardData({ includePayments: false })
       .then((response) => {
         if (!isMounted) {
           return
