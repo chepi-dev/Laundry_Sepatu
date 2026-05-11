@@ -118,6 +118,10 @@ export async function verifyOtp(payload: VerifyOtpPayload) {
   })
 }
 
+let cachedCurrentUser: User | null = null
+let cachedCurrentUserToken: string | null = null
+let cachedCurrentUserPromise: Promise<User> | null = null
+
 export async function getCurrentUser() {
   const token = getAuthToken()
 
@@ -125,12 +129,36 @@ export async function getCurrentUser() {
     throw new Error('Sesi login tidak ditemukan.')
   }
 
-  const response = await authRequest<AuthApiUser>('/me', {
+  if (cachedCurrentUser && cachedCurrentUserToken === token) {
+    return cachedCurrentUser
+  }
+
+  if (cachedCurrentUserPromise && cachedCurrentUserToken === token) {
+    return cachedCurrentUserPromise
+  }
+
+  cachedCurrentUserToken = token
+  cachedCurrentUserPromise = authRequest<AuthApiUser>('/me', {
     method: 'GET',
     token,
   })
+    .then((response) => {
+      const user = mapAuthUserToDomain(response)
+      cachedCurrentUser = user
+      return user
+    })
+    .catch((error) => {
+      cachedCurrentUserPromise = null
+      throw error
+    })
 
-  return mapAuthUserToDomain(response)
+  return cachedCurrentUserPromise
+}
+
+export function clearCurrentUserCache() {
+  cachedCurrentUser = null
+  cachedCurrentUserToken = null
+  cachedCurrentUserPromise = null
 }
 
 export async function updateCurrentUserProfile(payload: UpdateProfilePayload) {

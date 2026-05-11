@@ -3,7 +3,8 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
 import type { Order, OrderDetail, Payment, Service, User } from '../../types/domain'
 import { CustomerNavbar } from './components/CustomerNavbar'
-import { getCustomerServicesData } from './api/customerServices.repository'
+import { getCustomerDashboardData } from '../customer-dashboard/api/customerDashboard.repository'
+import { getPaymentByOrderId } from '../customer-dashboard/api/payments.api'
 
 const ORDER_STEPS = ['Pending', 'Diproses', 'Pickup', 'Dicuci', 'Selesai']
 
@@ -37,14 +38,10 @@ function getStatusClass(status: string) {
   return status.toLowerCase().replaceAll(' ', '-')
 }
 
-function getPaymentForOrder(payments: Payment[], orderId: number) {
-  return payments.find((payment) => payment.orderId === orderId) ?? null
-}
-
 export function CustomerOrderDetailPage() {
   const [user, setUser] = useState<User | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
-  const [payments, setPayments] = useState<Payment[]>([])
+  const [paymentsByOrderId, setPaymentsByOrderId] = useState<Record<number, Payment | null>>({})
   const [services, setServices] = useState<Service[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -53,7 +50,7 @@ export function CustomerOrderDetailPage() {
   useEffect(() => {
     let isMounted = true
 
-    getCustomerServicesData()
+    getCustomerDashboardData({ includePayments: false })
       .then((response) => {
         if (!isMounted) {
           return
@@ -61,7 +58,6 @@ export function CustomerOrderDetailPage() {
 
         setUser(response.user)
         setOrders(response.orders)
-        setPayments(response.payments)
         setServices(response.services)
         setSelectedOrderId(response.orders[0]?.id ?? null)
       })
@@ -85,6 +81,40 @@ export function CustomerOrderDetailPage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!selectedOrderId || selectedOrderId in paymentsByOrderId) {
+      return
+    }
+
+    let isMounted = true
+
+    getPaymentByOrderId(selectedOrderId)
+      .then((payment) => {
+        if (!isMounted) {
+          return
+        }
+
+        setPaymentsByOrderId((currentPayments) => ({
+          ...currentPayments,
+          [selectedOrderId]: payment,
+        }))
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setPaymentsByOrderId((currentPayments) => ({
+          ...currentPayments,
+          [selectedOrderId]: null,
+        }))
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [paymentsByOrderId, selectedOrderId])
+
   if (isLoading) {
     return <div className="service-page service-page--state">Memuat detail order...</div>
   }
@@ -100,7 +130,7 @@ export function CustomerOrderDetailPage() {
   const selectedOrder =
     orders.find((order) => order.id === selectedOrderId) ?? orders[0] ?? null
   const selectedPayment = selectedOrder
-    ? getPaymentForOrder(payments, selectedOrder.id)
+    ? paymentsByOrderId[selectedOrder.id] ?? null
     : null
   const activeStepIndex = selectedOrder
     ? ORDER_STEPS.findIndex((step) => step === selectedOrder.status)
@@ -145,7 +175,7 @@ export function CustomerOrderDetailPage() {
 
               <div className="customer-order-list">
                 {orders.map((order) => {
-                  const payment = getPaymentForOrder(payments, order.id)
+                  const payment = paymentsByOrderId[order.id]
 
                   return (
                     <button
@@ -160,7 +190,7 @@ export function CustomerOrderDetailPage() {
                       <strong>{formatRupiah(order.totalHarga)}</strong>
                       <small>
                         {formatDate(order.tanggalOrder)} -{' '}
-                        {payment?.status ?? 'Belum bayar'}
+                        {payment?.status ?? (order.id === selectedOrder?.id ? 'Belum bayar' : 'Detail')}
                       </small>
                     </button>
                   )

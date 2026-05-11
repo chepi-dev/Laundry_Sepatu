@@ -17,6 +17,9 @@ function mapService(service: ApiService): Service {
   }
 }
 
+let cachedServices: Service[] | null = null
+let cachedServicesPromise: Promise<Service[]> | null = null
+
 function getRequiredToken() {
   const token = getAuthToken()
 
@@ -28,11 +31,32 @@ function getRequiredToken() {
 }
 
 export async function getServices() {
-  const response = await apiRequest<ServiceListResponse>('/layanan', {
+  if (cachedServices) {
+    return cachedServices
+  }
+
+  if (cachedServicesPromise) {
+    return cachedServicesPromise
+  }
+
+  cachedServicesPromise = apiRequest<ServiceListResponse>('/layanan', {
     method: 'GET',
   })
+    .then((response) => {
+      cachedServices = response.data.map(mapService)
+      return cachedServices
+    })
+    .catch((error) => {
+      cachedServicesPromise = null
+      throw error
+    })
 
-  return response.data.map(mapService)
+  return cachedServicesPromise
+}
+
+export function clearServicesCache() {
+  cachedServices = null
+  cachedServicesPromise = null
 }
 
 export async function createService(payload: ServicePayload) {
@@ -42,6 +66,7 @@ export async function createService(payload: ServicePayload) {
     payload,
   })
 
+  clearServicesCache()
   return mapService(response.data)
 }
 
@@ -52,6 +77,7 @@ export async function updateService(serviceId: number, payload: ServicePayload) 
     payload,
   })
 
+  clearServicesCache()
   return mapService(response.data)
 }
 
@@ -60,4 +86,6 @@ export async function deleteService(serviceId: number) {
     method: 'DELETE',
     token: getRequiredToken(),
   })
+
+  clearServicesCache()
 }

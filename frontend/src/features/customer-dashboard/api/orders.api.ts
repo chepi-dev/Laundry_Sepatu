@@ -67,13 +67,37 @@ export function mapOrder(order: ApiOrder): Order {
   }
 }
 
+let cachedCustomerOrders: Order[] | null = null
+let cachedCustomerOrdersPromise: Promise<Order[]> | null = null
+
+export function clearCustomerOrdersCache() {
+  cachedCustomerOrders = null
+  cachedCustomerOrdersPromise = null
+}
+
 export async function getCustomerOrders() {
-  const response = await apiRequest<OrderListResponse>('/orders', {
+  if (cachedCustomerOrders) {
+    return cachedCustomerOrders
+  }
+
+  if (cachedCustomerOrdersPromise) {
+    return cachedCustomerOrdersPromise
+  }
+
+  cachedCustomerOrdersPromise = apiRequest<OrderListResponse>('/orders', {
     method: 'GET',
     token: getRequiredToken(),
   })
+    .then((response) => {
+      cachedCustomerOrders = response.data.map(mapOrder)
+      return cachedCustomerOrders
+    })
+    .catch((error) => {
+      cachedCustomerOrdersPromise = null
+      throw error
+    })
 
-  return response.data.map(mapOrder)
+  return cachedCustomerOrdersPromise
 }
 
 export async function createCustomerOrder(payload: CreateOrderPayload) {
@@ -83,5 +107,6 @@ export async function createCustomerOrder(payload: CreateOrderPayload) {
     payload,
   })
 
+  clearCustomerOrdersCache()
   return mapOrder(response.data)
 }

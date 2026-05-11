@@ -29,38 +29,39 @@ Route::post('/verify-otp', [OtpController::class, 'verifyOtp']);
 Route::get('/layanan',[LayananController::class, 'index']);
 Route::get('/layanan/{id}',[LayananController::class, 'show']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/layanan', [LayananController::class, 'store']);
-    Route::put('/layanan/{id}', [LayananController::class, 'update']);
-    Route::delete('/layanan/{id}', [LayananController::class, 'destroy']);
-});
-
-// Pembayaran
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/orders/{orderId}/pembayaran', [PembayaranController::class, 'store']);
-    Route::get('/orders/{orderId}/pembayaran', [PembayaranController::class, 'show']);
-});
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+// Pembayaran
+    Route::get('/admin/orders/{orderId}/pembayaran', [PembayaranController::class, 'adminShow']);
     Route::patch('/admin/orders/{orderId}/pembayaran/status', [PembayaranController::class, 'updateStatus']);
+
+// Admin Orders
+    Route::get('/admin/orders', [AdminOrderController::class, 'index']);
+    Route::get('/admin/orders/{id}', [AdminOrderController::class, 'show']);
+    Route::patch('/admin/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+
+// Admin Customers
+    Route::get('/admin/customers', [AdminCustomerController::class, 'index']);
+    Route::get('/admin/customers/{id}', [AdminCustomerController::class, 'show']);
 });
 
-// Order Customer
+// Customer
 Route::middleware('auth:sanctum')->group(function () {
+// Orders
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders', [OrderController::class, 'store']);
 
-
+// profile
     Route::patch('/profile', [ProfileController::class, 'update']);
 
-});
+// Pembayaran
+    Route::post('/orders/{orderId}/pembayaran', [PembayaranController::class, 'store']);
+    Route::get('/orders/{orderId}/pembayaran', [PembayaranController::class, 'show']);
 
-//Admin
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
-    Route::get('/admin/orders', [AdminOrderController::class, 'index']);
-    Route::patch('/admin/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
-
-    Route::get('/admin/customers', [AdminCustomerController::class, 'index']);
-
+// Layanan
+    Route::post('/layanan', [LayananController::class, 'store']);
+    Route::put('/layanan/{id}', [LayananController::class, 'update']);
+    Route::delete('/layanan/{id}', [LayananController::class, 'destroy']);
+    
 });

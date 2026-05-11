@@ -38,7 +38,7 @@ function mapPayment(payment: ApiPayment): Payment {
     tanggalBayar: payment.tanggal_bayar ?? '',
     rekeningTujuan: BANK_ACCOUNT_NUMBER,
     namaBank: BANK_ACCOUNT_NAME,
-    buktiPembayaran: '',
+    buktiPembayaran: payment.bukti_pembayaran_url ?? payment.bukti_pembayaran ?? '',
   }
 }
 
@@ -48,6 +48,10 @@ export async function getPaymentByOrderId(orderId: number) {
       method: 'GET',
       token: getRequiredToken(),
     })
+
+    if (!response || !response.data) {
+      return null
+    }
 
     return mapPayment(response.data)
   } catch (error) {
@@ -60,10 +64,17 @@ export async function getPaymentByOrderId(orderId: number) {
 }
 
 export async function createPaymentByOrderId(orderId: number, payload: CreatePaymentPayload) {
+  const formData = new FormData()
+  formData.set('metode_pembayaran', payload.metode_pembayaran)
+
+  if (payload.bukti_pembayaran) {
+    formData.set('bukti_pembayaran', payload.bukti_pembayaran)
+  }
+
   const response = await apiRequest<PaymentResponse>(`/orders/${orderId}/pembayaran`, {
     method: 'POST',
     token: getRequiredToken(),
-    payload,
+    payload: formData,
   })
 
   return mapPayment(response.data)

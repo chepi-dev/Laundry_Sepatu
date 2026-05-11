@@ -26,6 +26,7 @@ export type RegisterPayload = {
 export type UpdateProfilePayload = {
   name: string
   no_hp: string
+  alamat?: string | null
 }
 
 export type AuthResponse = {

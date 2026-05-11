@@ -8,6 +8,7 @@ type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 type PrimitiveValue = string | number | boolean | null | undefined
 type RequestPayload =
+  | FormData
   | Record<string, PrimitiveValue>
   | Record<string, PrimitiveValue | PrimitiveValue[] | Record<string, PrimitiveValue>[]>
 
@@ -44,7 +45,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
 
   let requestUrl = `${getApiBaseUrl()}${path}`
 
-  if (method === 'GET' && payload) {
+  if (method === 'GET' && payload && !(payload instanceof FormData)) {
     const query = new URLSearchParams()
 
     Object.entries(payload).forEach(([key, value]) => {
@@ -59,8 +60,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}) 
   }
 
   if ((method === 'POST' || method === 'PUT' || method === 'PATCH') && payload) {
-    headers.set('Content-Type', 'application/json')
-    requestInit.body = JSON.stringify(payload)
+    if (payload instanceof FormData) {
+      requestInit.body = payload
+    } else {
+      headers.set('Content-Type', 'application/json')
+      requestInit.body = JSON.stringify(payload)
+    }
   }
 
   const response = await fetch(requestUrl, requestInit)
