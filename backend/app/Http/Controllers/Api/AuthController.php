@@ -15,12 +15,18 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
+            'role' => 'nullable|string',
+            'no_hp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'role' => $validated['role'] ?? 'customer',
+            'no_hp' => $validated['no_hp'] ?? null,
+            'alamat' => $validated['alamat'] ?? null,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
