@@ -1,1 +1,0 @@
-var e=new Intl.NumberFormat(`id-ID`,{style:`currency`,currency:`IDR`,maximumFractionDigits:0});function t(t){return t===0?`Gratis`:e.format(t).replace(`IDR`,`Rp`)}export{t};
