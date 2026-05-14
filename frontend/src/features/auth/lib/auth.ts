@@ -13,6 +13,10 @@ export function getAuthModeFromHash(hash: string): AuthMode | null {
     return 'forgot-password'
   }
 
+  if (hash === '#/auth/reset-password') {
+    return 'reset-password'
+  }
+
   if (hash === '#/auth/verify-email/register') {
     return 'verify-email'
   }

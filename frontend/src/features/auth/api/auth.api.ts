@@ -12,6 +12,7 @@ import type {
   LoginPayload,
   OtpResponse,
   RegisterPayload,
+  ResetPasswordPayload,
   SendOtpPayload,
   UpdateProfilePayload,
   VerifyOtpPayload,
@@ -114,6 +115,17 @@ export async function verifyOtp(payload: VerifyOtpPayload) {
     payload: {
       email: payload.email,
       otp_code: payload.otp_code,
+    },
+  })
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  return authRequest<AuthResponse>('/reset-password', {
+    method: 'POST',
+    payload: {
+      email: payload.email,
+      password: payload.password,
+      password_confirmation: payload.password_confirmation,
     },
   })
 }

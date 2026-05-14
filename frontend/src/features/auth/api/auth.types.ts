@@ -46,6 +46,12 @@ export type VerifyOtpPayload = {
   otp_code: string
 }
 
+export type ResetPasswordPayload = {
+  email: string
+  password: string
+  password_confirmation: string
+}
+
 export type OtpResponse = {
   success: boolean
   message: string

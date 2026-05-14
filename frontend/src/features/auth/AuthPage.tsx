@@ -3,7 +3,7 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { FormField } from '../../components/ui/FormField'
 import type { LandingContent } from '../../types/content'
 import type { AuthMode, OtpFlow } from '../../types/auth'
-import { login, register, sendOtp, verifyOtp } from './api/auth.api'
+import { login, register, sendOtp, verifyOtp, resetPassword } from './api/auth.api'
 import { setSessionUser } from './lib/session'
 
 type AuthPageProps = {
@@ -51,6 +51,13 @@ const authContent = {
     description:
       'Masukkan email terdaftar untuk melanjutkan verifikasi OTP sebelum proses pemulihan akun.',
     submitLabel: 'Kirim Kode OTP',
+  },
+  'reset-password': {
+    eyebrow: 'Reset Password',
+    title: 'Atur Password Baru',
+    description:
+      'Masukkan password baru untuk akun Anda setelah verifikasi OTP berhasil.',
+    submitLabel: 'Reset Password',
   },
   'verify-email': {
     eyebrow: 'Verifikasi Email',
@@ -153,6 +160,8 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [otpCode, setOtpCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -197,14 +206,29 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
         return
       }
 
-      if (mode === 'forgot-password') {
-        const response = await sendOtp({ email })
-        savePendingOtp({
-          flow: 'forgot-password',
-          email,
+      if (mode === 'reset-password') {
+        const resetEmail = window.sessionStorage.getItem('reset_password_email')
+        if (!resetEmail) {
+          throw new Error('Email untuk reset password tidak ditemukan. Silakan ulangi proses dari awal.')
+        }
+
+        if (newPassword.length < 8) {
+          throw new Error('Password baru harus minimal 8 karakter.')
+        }
+
+        if (newPassword !== confirmPassword) {
+          throw new Error('Konfirmasi password tidak cocok.')
+        }
+
+        const response = await resetPassword({
+          email: resetEmail,
+          password: newPassword,
+          password_confirmation: confirmPassword,
         })
-        setSuccessMessage(response.message || 'Kode OTP sudah dikirim ke email Anda.')
-        window.location.hash = '#/auth/send-otp/forgot-password'
+
+        window.sessionStorage.removeItem('reset_password_email')
+        setSuccessMessage(response.message || 'Password berhasil direset. Silakan login dengan password baru.')
+        window.location.hash = '#/auth/login'
         return
       }
 
@@ -245,11 +269,13 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
         return
       }
 
-      clearPendingOtp()
-      setSuccessMessage(
-        'Verifikasi OTP berhasil. Alur reset password siap dilanjutkan setelah endpoint backend ditambahkan.',
-      )
-      window.location.hash = '#/auth/login'
+      if (pendingOtp.flow === 'forgot-password') {
+        // Simpan email untuk reset password
+        window.sessionStorage.setItem('reset_password_email', pendingOtp.email)
+        clearPendingOtp()
+        window.location.hash = '#/auth/reset-password'
+        return
+      }
     } catch (error) {
       const message = getErrorMessage(error)
       setErrorMessage(message)
@@ -414,6 +440,32 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
                   />
                   <div className="auth-meta-links">
                     <a href="#/auth/login">Kembali ke login</a>
+                  </div>
+                </>
+              ) : null}
+
+              {mode === 'reset-password' ? (
+                <>
+                  <FormField
+                    id="reset-new-password"
+                    label="Password Baru"
+                    type="password"
+                    placeholder="Masukkan password baru"
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={setNewPassword}
+                  />
+                  <FormField
+                    id="reset-confirm-password"
+                    label="Konfirmasi Password"
+                    type="password"
+                    placeholder="Konfirmasi password baru"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                  />
+                  <div className="auth-meta-links">
+                    <a href="#/auth/forgot-password">Kembali ke lupa password</a>
                   </div>
                 </>
               ) : null}
