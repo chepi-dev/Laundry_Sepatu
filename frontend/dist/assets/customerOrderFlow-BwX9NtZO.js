@@ -1,0 +1,1 @@
+var e=`laundry_customer_payment_draft`;function t(e,t){let n=window.sessionStorage.getItem(e);if(!n)return t;try{return JSON.parse(n)}catch{return t}}function n(t){window.sessionStorage.setItem(e,JSON.stringify(t))}function r(){return t(e,null)}function i(){window.sessionStorage.removeItem(e)}export{r as n,n as r,i as t};

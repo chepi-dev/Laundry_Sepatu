@@ -23,13 +23,24 @@ class AuthController extends Controller
         $validated['role'] = $validated['role'] ?? 'customer';
         $validated['no_hp'] = $validated['no_hp'] ?? null;
         $validated['alamat'] = $validated['alamat'] ?? null;
+        $validated['password'] = Hash::make($validated['password']);
 
         $user = User::create($validated);
+        $user->refresh();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->only([
+                'id',
+                'name',
+                'email',
+                'role',
+                'no_hp',
+                'alamat',
+                'created_at',
+                'updated_at',
+            ]),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 201);
@@ -65,6 +76,30 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logout berhasil'
+        ], 200);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|string|email',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::where('email', $validated['email'])->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return response()->json([
+            'message' => 'Password berhasil direset'
         ], 200);
     }
 }
