@@ -23,13 +23,24 @@ class AuthController extends Controller
         $validated['role'] = $validated['role'] ?? 'customer';
         $validated['no_hp'] = $validated['no_hp'] ?? null;
         $validated['alamat'] = $validated['alamat'] ?? null;
+        $validated['password'] = Hash::make($validated['password']);
 
         $user = User::create($validated);
+        $user->refresh();
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->only([
+                'id',
+                'name',
+                'email',
+                'role',
+                'no_hp',
+                'alamat',
+                'created_at',
+                'updated_at',
+            ]),
             'access_token' => $token,
             'token_type' => 'Bearer',
         ], 201);
