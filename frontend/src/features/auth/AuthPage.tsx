@@ -171,6 +171,22 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
     setErrorMessage('')
   }, [mode])
 
+  useEffect(() => {
+    if (mode === 'send-otp' && (!pendingOtp || !otpFlow || pendingOtp.flow !== otpFlow)) {
+      setErrorMessage('Data OTP tidak ditemukan. Silakan ulangi proses dari awal.')
+      window.location.hash = '#/auth/forgot-password'
+      return
+    }
+
+    if (mode === 'reset-password') {
+      const resetEmail = window.sessionStorage.getItem('reset_password_email')
+      if (!resetEmail) {
+        setErrorMessage('Email untuk reset password tidak ditemukan. Silakan ulangi proses dari awal.')
+        window.location.hash = '#/auth/forgot-password'
+      }
+    }
+  }, [mode, otpFlow, pendingOtp])
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setErrorMessage('')
