@@ -55,7 +55,7 @@ function getProfileResponseUser(payload: UpdateProfileResponse) {
 
 export async function login(payload: LoginPayload) {
   const response = await authRequest<AuthResponse>('/login', {
-    method: 'GET',
+    method: 'POST',
     payload: {
       email: payload.email,
       password: payload.password,
