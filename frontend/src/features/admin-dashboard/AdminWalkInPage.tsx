@@ -180,9 +180,6 @@ export function AdminWalkInPage() {
         </nav>
 
         <div className="dashboard-navbar__actions">
-          <ActionButton href="#beranda" variant="light" small>
-            Kembali ke Beranda
-          </ActionButton>
           <ActionButton variant="dark" small onClick={() => void performLogout()}>
             Logout
           </ActionButton>
