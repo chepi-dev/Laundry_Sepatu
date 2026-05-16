@@ -222,6 +222,23 @@ export function AuthPage({ mode, otpFlow, footer }: AuthPageProps) {
         return
       }
 
+      if (mode === 'forgot-password') {
+        const normalizedEmail = email.trim()
+
+        if (!normalizedEmail) {
+          throw new Error('Email wajib diisi untuk mengirim kode OTP.')
+        }
+
+        const response = await sendOtp({ email: normalizedEmail })
+        savePendingOtp({
+          flow: 'forgot-password',
+          email: normalizedEmail,
+        })
+        setSuccessMessage(response.message || 'Kode OTP sudah dikirim ke email Anda.')
+        window.location.hash = '#/auth/send-otp/forgot-password'
+        return
+      }
+
       if (mode === 'reset-password') {
         const resetEmail = window.sessionStorage.getItem('reset_password_email')
         if (!resetEmail) {

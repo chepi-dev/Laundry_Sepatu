@@ -42,24 +42,24 @@ function mapOrderStatus(status: string): OrderStatus {
 
 function mapOrderDetail(detail: ApiOrderDetail): OrderDetail {
   return {
-    id: detail.id,
-    orderId: detail.order_id,
-    layananId: detail.layanan_id,
-    qty: detail.qty,
-    harga: detail.harga,
-    subtotal: detail.subtotal,
+    id: Number(detail.id),
+    orderId: Number(detail.order_id),
+    layananId: Number(detail.layanan_id),
+    qty: Number(detail.qty),
+    harga: Number(detail.harga),
+    subtotal: Number(detail.subtotal),
     layananNama: detail.layanan?.nama_layanan,
   }
 }
 
 export function mapOrder(order: ApiOrder): Order {
   return {
-    id: order.id,
-    userId: order.user_id,
+    id: Number(order.id),
+    userId: Number(order.user_id),
     kodeOrder: order.kode_order,
     tanggalOrder: order.tanggal_order,
     status: mapOrderStatus(order.status),
-    totalHarga: order.total_harga,
+    totalHarga: Number(order.total_harga),
     alamatPickup: order.alamat_pickup,
     catatan: order.catatan ?? 'Tidak ada catatan tambahan.',
     estimasiSelesai: order.estimasi_selesai ?? order.tanggal_order,

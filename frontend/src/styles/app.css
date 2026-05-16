@@ -2829,7 +2829,7 @@ button {
 }
 
 .admin-payment-table {
-  min-width: 760px;
+  min-width: 1180px;
   table-layout: fixed;
 }
 
@@ -2839,25 +2839,39 @@ button {
   vertical-align: middle;
 }
 
-.admin-payment-table th:nth-child(1),
-.admin-payment-table th:nth-child(4),
-.admin-payment-table th:nth-child(6) {
-  width: 130px;
+.admin-payment-table th:nth-child(1) {
+  width: 160px;
 }
 
 .admin-payment-table th:nth-child(2) {
-  width: 180px;
+  width: 140px;
 }
 
 .admin-payment-table th:nth-child(3) {
-  width: 150px;
+  width: 170px;
+}
+
+.admin-payment-table th:nth-child(4),
+.admin-payment-table th:nth-child(5),
+.admin-payment-table th:nth-child(6),
+.admin-payment-table th:nth-child(7),
+.admin-payment-table th:nth-child(8),
+.admin-payment-table th:nth-child(9) {
+  width: 130px;
+}
+
+.admin-payment-table th:nth-child(8) {
+  width: 175px;
 }
 
 .admin-payment-table .status-pill {
+  display: inline-flex;
   min-height: 30px;
   padding: 0 10px;
   font-size: 0.68rem;
   letter-spacing: 0.08em;
+  max-width: 100%;
+  text-align: center;
   white-space: nowrap;
 }
 
@@ -2867,7 +2881,8 @@ button {
 }
 
 .admin-payment-proof {
-  display: block;
+  display: inline-block;
+  max-width: 100%;
   overflow: hidden;
   color: #0d3d67;
   font-weight: 700;

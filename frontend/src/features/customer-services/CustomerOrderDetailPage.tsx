@@ -3,10 +3,20 @@ import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
 import type { Order, OrderDetail, Payment, Service, User } from '../../types/domain'
 import { CustomerNavbar } from './components/CustomerNavbar'
-import { getCustomerDashboardData } from '../customer-dashboard/api/customerDashboard.repository'
+import { clearCustomerDashboardCache } from '../customer-dashboard/api/customerDashboard.repository'
+import { getCurrentUser } from '../auth/api/auth.api'
+import { clearCustomerOrdersCache, getCustomerOrders } from '../customer-dashboard/api/orders.api'
 import { getPaymentByOrderId } from '../customer-dashboard/api/payments.api'
+import { getServices } from '../services/api/services.api'
 
 const ORDER_STEPS = ['Pending', 'Diproses', 'Pickup', 'Dicuci', 'Selesai']
+const ORDER_PROGRESS_INDEX: Record<string, number> = {
+  Pending: 0,
+  Diproses: 2,
+  Pickup: 2,
+  Dicuci: 3,
+  Selesai: 4,
+}
 
 function formatDate(date?: string) {
   if (!date) {
@@ -50,16 +60,19 @@ export function CustomerOrderDetailPage() {
   useEffect(() => {
     let isMounted = true
 
-    getCustomerDashboardData({ includePayments: false })
-      .then((response) => {
+    clearCustomerDashboardCache()
+    clearCustomerOrdersCache()
+
+    Promise.all([getCurrentUser(), getCustomerOrders(), getServices()])
+      .then(([currentUser, customerOrders, serviceData]) => {
         if (!isMounted) {
           return
         }
 
-        setUser(response.user)
-        setOrders(response.orders)
-        setServices(response.services)
-        setSelectedOrderId(response.orders[0]?.id ?? null)
+        setUser(currentUser)
+        setOrders(customerOrders)
+        setServices(serviceData)
+        setSelectedOrderId(customerOrders[0]?.id ?? null)
       })
       .catch((error) => {
         if (!isMounted) {
@@ -133,7 +146,7 @@ export function CustomerOrderDetailPage() {
     ? paymentsByOrderId[selectedOrder.id] ?? null
     : null
   const activeStepIndex = selectedOrder
-    ? ORDER_STEPS.findIndex((step) => step === selectedOrder.status)
+    ? ORDER_PROGRESS_INDEX[selectedOrder.status] ?? 0
     : -1
 
   return (

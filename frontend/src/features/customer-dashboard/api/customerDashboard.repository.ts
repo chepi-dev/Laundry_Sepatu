@@ -1,6 +1,6 @@
 import type { CustomerDashboardData } from '../../../types/domain'
 import { getCurrentUser } from '../../auth/api/auth.api'
-import { getCustomerOrders } from './orders.api'
+import { clearCustomerOrdersCache, getCustomerOrders } from './orders.api'
 import { getPaymentByOrderId } from './payments.api'
 import { getServices } from '../../services/api/services.api'
 
@@ -40,17 +40,14 @@ export async function getCustomerDashboardData(
       getServices(),
     ])
 
-    // Filter orders yang hanya milik user saat ini
-    const customerOrders = orders.filter((order) => order.userId === user.id)
-
     const payments = includePayments
-      ? await Promise.all(customerOrders.map((order) => getPaymentByOrderId(order.id)))
+      ? await Promise.all(orders.map((order) => getPaymentByOrderId(order.id)))
       : []
 
     const result = {
       user,
       services,
-      orders: customerOrders,
+      orders,
       payments: payments.filter((payment) => payment !== null),
     }
 
@@ -70,4 +67,5 @@ export async function getCustomerDashboardData(
 export function clearCustomerDashboardCache() {
   cachedDashboardData.clear()
   cachedDashboardDataPromise.clear()
+  clearCustomerOrdersCache()
 }

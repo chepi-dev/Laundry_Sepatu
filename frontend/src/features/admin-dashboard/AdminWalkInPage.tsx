@@ -5,7 +5,7 @@ import { formatRupiah } from '../../lib/format'
 import { performLogout } from '../auth/lib/logout'
 import { getCurrentUser } from '../auth/api/auth.api'
 import { getServices } from '../services/api/services.api'
-import { getAdminCustomers } from './api/adminDashboard.repository'
+import { createAdminWalkInOrder, getAdminCustomers } from './api/adminDashboard.repository'
 import type { Service, User } from '../../types/domain'
 
 export function AdminWalkInPage() {
@@ -24,6 +24,8 @@ export function AdminWalkInPage() {
   const [walkInQty, setWalkInQty] = useState(1)
   const [loadErrorMessage, setLoadErrorMessage] = useState('')
   const [formErrorMessage, setFormErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isSavingOrder, setIsSavingOrder] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -81,6 +83,7 @@ export function AdminWalkInPage() {
   const handleSelectCustomer = (customerId: number) => {
     setSelectedCustomerId(customerId)
     setFormErrorMessage('')
+    setSuccessMessage('')
 
     const customer = customers.find((item) => item.id === customerId)
 
@@ -92,6 +95,7 @@ export function AdminWalkInPage() {
   const handleUseExistingCustomer = () => {
     setCustomerMode('existing')
     setFormErrorMessage('')
+    setSuccessMessage('')
 
     if (selectedCustomer) {
       fillCustomerFields(selectedCustomer)
@@ -107,6 +111,7 @@ export function AdminWalkInPage() {
     setWalkInPhone('')
     setWalkInAddress('')
     setFormErrorMessage('')
+    setSuccessMessage('')
   }
 
   const resetWalkInForm = () => {
@@ -121,12 +126,15 @@ export function AdminWalkInPage() {
     setWalkInServiceId(services[0]?.id ?? 0)
     setWalkInQty(1)
     setFormErrorMessage('')
+    setSuccessMessage('')
   }
 
-  const handleCreateWalkInOrder = () => {
+  const handleCreateWalkInOrder = async () => {
     const trimmedName = walkInName.trim()
+    const trimmedEmail = walkInEmail.trim()
     const trimmedPhone = walkInPhone.trim()
     const trimmedAddress = walkInAddress.trim()
+    const trimmedNote = walkInNote.trim()
 
     if (customerMode === 'existing' && !selectedCustomer) {
       setFormErrorMessage('Pilih customer lama terlebih dahulu atau gunakan tombol Customer Baru.')
@@ -138,10 +146,48 @@ export function AdminWalkInPage() {
       return
     }
 
+    if (customerMode === 'new' && !trimmedEmail) {
+      setFormErrorMessage('Email wajib diisi untuk customer baru.')
+      return
+    }
+
     setFormErrorMessage('')
-    setFormErrorMessage(
-      'Endpoint API untuk order pelanggan datang langsung belum tersedia, jadi data tidak disimpan lokal lagi.',
-    )
+    setSuccessMessage('')
+    setIsSavingOrder(true)
+
+    try {
+      const response = await createAdminWalkInOrder(
+        customerMode === 'existing'
+          ? {
+              customer_id: selectedCustomerId,
+              layanan_id: selectedWalkInService.id,
+              qty: Number(walkInQty),
+              alamat_pickup: trimmedAddress,
+              catatan: trimmedNote || undefined,
+            }
+          : {
+              name: trimmedName,
+              no_hp: trimmedPhone,
+              email: trimmedEmail,
+              alamat: trimmedAddress,
+              layanan_id: selectedWalkInService.id,
+              qty: Number(walkInQty),
+              catatan: trimmedNote || undefined,
+            },
+      )
+
+      if (customerMode === 'new') {
+        setCustomers(await getAdminCustomers())
+      }
+
+      resetWalkInForm()
+      setSuccessMessage(response.message || 'Order cash di toko berhasil dibuat.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Order cash di toko gagal dibuat.'
+      setFormErrorMessage(message)
+    } finally {
+      setIsSavingOrder(false)
+    }
   }
 
   if (loadErrorMessage && !admin) {
@@ -216,6 +262,7 @@ export function AdminWalkInPage() {
 
           {loadErrorMessage ? <p className="service-error">{loadErrorMessage}</p> : null}
           {formErrorMessage ? <p className="service-error">{formErrorMessage}</p> : null}
+          {successMessage ? <p className="service-success">{successMessage}</p> : null}
 
           <div className="dashboard-order-form admin-walkin-form">
             <div className="admin-walkin-customer-tools">
@@ -349,7 +396,7 @@ export function AdminWalkInPage() {
             </div>
             <div className="admin-walkin-actions">
               <button className="admin-payment-action" type="button" onClick={handleCreateWalkInOrder}>
-                Simpan Order
+                {isSavingOrder ? 'Menyimpan...' : 'Simpan Order'}
               </button>
               <button className="service-select-button" type="button" onClick={resetWalkInForm}>
                 Reset

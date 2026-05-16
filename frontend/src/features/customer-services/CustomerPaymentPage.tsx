@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { ActionButton } from '../../components/ui/ActionButton'
 import { formatRupiah } from '../../lib/format'
+import { clearCustomerDashboardCache } from '../customer-dashboard/api/customerDashboard.repository'
 import { createCustomerOrder } from '../customer-dashboard/api/orders.api'
 import { createPaymentByOrderId } from '../customer-dashboard/api/payments.api'
 import { getCurrentUser } from '../auth/api/auth.api'
@@ -125,6 +126,7 @@ export function CustomerPaymentPage() {
         bukti_pembayaran: paymentProofFile,
       })
 
+      clearCustomerDashboardCache()
       clearCustomerPaymentDraft()
       setPaymentProofFile(null)
       setPaymentProofName('')

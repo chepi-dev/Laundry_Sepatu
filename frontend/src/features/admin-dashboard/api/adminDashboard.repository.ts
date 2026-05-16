@@ -7,8 +7,19 @@ import { mapOrder } from '../../customer-dashboard/api/orders.api'
 import type { ApiOrder } from '../../customer-dashboard/api/orders.types'
 import { getServices } from '../../services/api/services.api'
 
+type ApiAdminCustomer = Partial<AuthApiUser> & {
+  nama_pelanggan?: string | null
+  customer_name?: string | null
+  customer_no_hp?: string | null
+}
+
 type ApiAdminOrder = ApiOrder & {
   user?: AuthApiUser | null
+  customer?: ApiAdminCustomer | null
+  nama_pelanggan?: string | null
+  customer_name?: string | null
+  no_hp?: string | null
+  customer_no_hp?: string | null
   pembayaran?: ApiAdminPayment | null
 }
 
@@ -31,6 +42,11 @@ type ApiAdminPayment = {
   tanggal_bayar?: string | null
   bukti_pembayaran?: string | null
   bukti_pembayaran_url?: string | null
+  customer?: ApiAdminCustomer | null
+  nama_pelanggan?: string | null
+  customer_name?: string | null
+  no_hp?: string | null
+  customer_no_hp?: string | null
 }
 
 type AdminDashboardRequestOptions = {
@@ -38,6 +54,29 @@ type AdminDashboardRequestOptions = {
   includeOrders?: boolean
   includePayments?: boolean
   includeServices?: boolean
+}
+
+type AdminWalkInOrderPayload =
+  | {
+      customer_id: number
+      layanan_id: number
+      qty: number
+      alamat_pickup: string
+      catatan?: string
+    }
+  | {
+      name: string
+      no_hp: string
+      email: string
+      alamat: string
+      layanan_id: number
+      qty: number
+      catatan?: string
+    }
+
+type AdminWalkInOrderResponse = {
+  message?: string
+  data?: ApiAdminOrder
 }
 
 function getRequiredToken() {
@@ -52,12 +91,30 @@ function getRequiredToken() {
 
 function mapApiUser(user: AuthApiUser): User {
   return {
-    id: user.id,
+    id: Number(user.id),
     name: user.name,
     email: user.email,
     role: user.role,
     noHp: user.no_hp ?? '-',
     alamat: user.alamat ?? '-',
+  }
+}
+
+function mapAdminCustomer(customer: ApiAdminCustomer, fallbackUserId: number): User | null {
+  const name = customer.name ?? customer.customer_name ?? customer.nama_pelanggan ?? ''
+  const noHp = customer.no_hp ?? customer.customer_no_hp ?? ''
+
+  if (!name && !noHp && !customer.email) {
+    return null
+  }
+
+  return {
+    id: Number(customer.id ?? fallbackUserId),
+    name: name || 'Pelanggan',
+    email: customer.email ?? '-',
+    role: customer.role ?? 'customer',
+    noHp: noHp || '-',
+    alamat: customer.alamat ?? '-',
   }
 }
 
@@ -67,6 +124,20 @@ function getUniqueCustomers(orders: ApiAdminOrder[]) {
   orders.forEach((order) => {
     if (order.user) {
       customers.set(order.user.id, mapApiUser(order.user))
+      return
+    }
+
+    const mappedCustomer = mapAdminCustomer(
+      order.customer ?? {
+        id: order.user_id,
+        name: order.customer_name ?? order.nama_pelanggan ?? undefined,
+        no_hp: order.no_hp ?? order.customer_no_hp ?? undefined,
+      },
+      Number(order.user_id),
+    )
+
+    if (mappedCustomer) {
+      customers.set(mappedCustomer.id, mappedCustomer)
     }
   })
 
@@ -87,11 +158,11 @@ function mapPaymentStatus(status: string): PaymentStatus {
 
 function mapAdminPayment(payment: ApiAdminPayment): Payment {
   return {
-    id: payment.id,
-    orderId: payment.order_id,
+    id: Number(payment.id),
+    orderId: Number(payment.order_id),
     metodePembayaran: payment.metode_pembayaran,
     status: mapPaymentStatus(payment.status),
-    jumlahBayar: payment.jumlah_bayar,
+    jumlahBayar: Number(payment.jumlah_bayar),
     tanggalBayar: payment.tanggal_bayar ?? '',
     rekeningTujuan: '1234567890',
     namaBank: 'BCA a.n. Shoes and Care',
@@ -177,5 +248,21 @@ export async function verifyAdminPayment(
     },
   })
 
+  await apiRequest(`/admin/orders/${orderId}/status`, {
+    method: 'PATCH',
+    token: getRequiredToken(),
+    payload: {
+      status: 'diproses',
+    },
+  })
+
   return getAdminDashboardData(options)
+}
+
+export async function createAdminWalkInOrder(payload: AdminWalkInOrderPayload) {
+  return apiRequest<AdminWalkInOrderResponse>('/admin/walk-in-orders', {
+    method: 'POST',
+    token: getRequiredToken(),
+    payload,
+  })
 }

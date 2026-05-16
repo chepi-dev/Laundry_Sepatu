@@ -5,6 +5,18 @@ import { performLogout } from '../auth/lib/logout'
 import { getAdminDashboardData, verifyAdminPayment } from './api/adminDashboard.repository'
 import type { AdminDashboardData, Order, User } from '../../types/domain'
 
+function formatDate(date?: string) {
+  if (!date) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(date))
+}
+
 function getOrderForPayment(orders: Order[], orderId: number) {
   return orders.find((order) => order.id === orderId) ?? null
 }
@@ -15,6 +27,23 @@ function getCustomerForOrder(customers: User[], order: Order | null) {
   }
 
   return customers.find((customer) => customer.id === order.userId) ?? null
+}
+
+function getWhatsAppHref(phone: string, customerName: string, orderCode: string) {
+  const digitsOnly = phone.replace(/\D/g, '')
+
+  if (!digitsOnly) {
+    return ''
+  }
+
+  const normalizedPhone = digitsOnly.startsWith('0')
+    ? `62${digitsOnly.slice(1)}`
+    : digitsOnly.startsWith('8')
+      ? `62${digitsOnly}`
+      : digitsOnly
+  const message = `Halo ${customerName}, kami dari Shoes and Care terkait pembayaran order ${orderCode}.`
+
+  return `https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`
 }
 
 export function AdminPaymentsPage() {
@@ -58,6 +87,7 @@ export function AdminPaymentsPage() {
   const pendingPayments = adminData.payments.filter(
     (payment) => payment.status === 'Menunggu Verifikasi',
   )
+  const sortedPayments = [...adminData.payments].sort((a, b) => b.id - a.id)
 
   const handleVerifyPayment = async (orderId: number) => {
     try {
@@ -143,40 +173,43 @@ export function AdminPaymentsPage() {
               <thead>
                 <tr>
                   <th>Order</th>
-                  <th>Customer</th>
-                  <th>Status</th>
+                  <th>Pelanggan</th>
+                  <th>No. HP</th>
+                  <th>Tanggal</th>
                   <th>Metode</th>
-                  <th>Total Bayar</th>
+                  <th>Total</th>
                   <th>Bukti</th>
+                  <th>Status</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {adminData.payments.map((payment) => {
+                {sortedPayments.map((payment) => {
                   const order = getOrderForPayment(adminData.orders, payment.orderId)
                   const customer = getCustomerForOrder(adminData.customers, order)
+                  const orderCode = order?.kodeOrder ?? `#${payment.orderId}`
+                  const customerName = customer?.name ?? 'Pelanggan'
+                  const customerPhone = customer?.noHp ?? '-'
+                  const whatsappHref = getWhatsAppHref(customerPhone, customerName, orderCode)
+                  const canOpenWhatsApp = Boolean(whatsappHref)
 
                   return (
                     <tr key={payment.id}>
                       <td>
-                        <strong className="admin-payment-order">#{payment.orderId}</strong>
+                        <strong className="admin-payment-order">{orderCode}</strong>
                       </td>
+                      <td>{customerName}</td>
                       <td>
-                        <strong>{customer?.name ?? 'Pelanggan'}</strong>
-                        <br />
-                        <span className="admin-payment-proof">
-                          {customer?.noHp ?? 'No. HP tidak tersedia'}
+                        <span className="admin-order-phone">
+                          <span>{customerPhone}</span>
+                          {canOpenWhatsApp ? (
+                            <a href={whatsappHref} target="_blank" rel="noreferrer">
+                              WA
+                            </a>
+                          ) : null}
                         </span>
                       </td>
-                      <td>
-                        <span
-                          className={`status-pill status-pill--${payment.status
-                            .toLowerCase()
-                            .replaceAll(' ', '-')}`}
-                        >
-                          {payment.status}
-                        </span>
-                      </td>
+                      <td>{formatDate(order?.tanggalOrder ?? payment.tanggalBayar)}</td>
                       <td>{payment.metodePembayaran}</td>
                       <td>
                         <strong>{formatRupiah(payment.jumlahBayar)}</strong>
@@ -194,6 +227,15 @@ export function AdminPaymentsPage() {
                         ) : (
                           <span className="admin-payment-proof">Belum ada file</span>
                         )}
+                      </td>
+                      <td>
+                        <span
+                          className={`status-pill status-pill--${payment.status
+                            .toLowerCase()
+                            .replaceAll(' ', '-')}`}
+                        >
+                          {payment.status}
+                        </span>
                       </td>
                       <td>
                         {payment.status === 'Menunggu Verifikasi' ? (
